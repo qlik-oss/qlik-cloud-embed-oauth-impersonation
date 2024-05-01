@@ -1,0 +1,404 @@
+<DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <meta name="description" content="" />
+  <meta name="author" content="" />
+  <title>My Portal</title>
+  <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+  <link href="css/styles.css" rel="stylesheet" />
+  <link href="css/qlik-embed-style.css" rel="stylesheet" />
+  <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+  <script src="js/script.js"></script>
+</head>
+
+<body class="sb-nav-fixed">
+  <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+    <!-- Navbar Brand-->
+    <a class="navbar-brand ps-3" href="home.html">My Portal</a>
+    <!-- Sidebar Toggle-->
+    <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i
+        class="fas fa-bars"></i></button>
+    <!-- Navbar Search-->
+    <form class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
+      <div class="input-group">
+        <input class="form-control" type="text" placeholder="Search for..." aria-label="Search for..."
+          aria-describedby="btnNavbarSearch" />
+        <button class="btn btn-custom" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
+      </div>
+    </form>
+    <!-- Navbar-->
+    <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+          aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+          <li><a class="dropdown-item" href="#">Settings</a></li>
+          <li><a class="dropdown-item" href="#">Activity Log</a></li>
+          <li>
+            <hr class="dropdown-divider" />
+          </li>
+          <li><a class="dropdown-item" href="/logout">Logout</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+  <div id="layoutSidenav">
+    <div id="layoutSidenav_nav">
+      <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+        <div class="sb-sidenav-menu">
+          <img src="/img/company-logo.svg" height="25%" width="60%" class="centerImage">
+          <div class="nav">
+            <a class="nav-link" href="#home">
+              <div class="sb-nav-link-icon"><i class="fas fa-house"></i></div>
+              Home
+            </a>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+            <br>
+
+            <div class="sb-sidenav-menu-heading">EMBEDDING STRATEGIES</div>
+            <a class="nav-link" href="#classic-app">
+              <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+              Classic App
+            </a>
+            <a class="nav-link" href="#analytics-chart">
+              <div class="sb-nav-link-icon"><i class="fas fa-chart-line"></i></div>
+              Analytics Chart
+            </a>
+            <a class="nav-link" href="#analytics-chart-data">
+              <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
+              Analytics Chart Data
+            </a>
+            <a class="nav-link" href="#field">
+              <div class="sb-nav-link-icon"><i class="fas fa-filter"></i></div>
+              Field
+            </a>
+            <a class="nav-link" href="#sheet-nav">
+              <div class="sb-nav-link-icon"><i class="fas fa-sheet-plastic"></i></div>
+              Sheet Navigation
+            </a>
+            <a class="nav-link" href="#classic-chart">
+              <div class="sb-nav-link-icon"><i class="fas fa-backward"></i></div>
+              Classic Chart
+            </a>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+          </div>
+        </div>
+        <div class="sb-sidenav-footer">
+          <img src="/img/powered_by_qlik.svg" height="80%" width="80%">
+        </div>
+      </nav>
+    </div>
+    <div id="layoutSidenav_content">
+      <main>
+        <div class="container-fluid px-4">
+          <div class="content">
+            <div id="home" class="home content-item">
+              <div class="container px-4 py-5" id="featured-3">
+                <h3 class="pb-2 border-bottom" style="text-align: center;">Embedding Strategies</h3>
+                <br>
+                <p style="text-align: center;">Behind the scenes, the app is loading six or more different embedding approaches at the same time. In a production app, you might use at most two, and load them on-request.</p>
+                <br>
+                <div class="row justify-content-center">
+                  <div class="col-sm-2 our-research__container ">
+                    <a class="nav-link" href="#classic-app">
+                      <span class="link"></span>
+                    </a>
+                    <div class="card border-primary">
+                      <div class="card-body">
+                        <h5 class="card-title">Classic App</h5>
+                        <i class="fas fa-tachometer-alt lock-icon"></i>
+                        <p class="card-text">Embed the entire Qlik App</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-sm-2 our-research__container ">
+                    <a class="nav-link" href="#analytics-chart">
+                      <span class="link"></span>
+                    </a>
+                    <div class="card border-primary">
+                      <div class="card-body">
+                        <h5 class="card-title">Analytics Chart</h5>
+                        <i class="fas fa-chart-line lock-icon"></i>
+                        <p class="card-text">Embed a single chart/object</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-sm-2 our-research__container ">
+                    <a class="nav-link" href="#analytics-chart-data">
+                      <span class="link"></span>
+                    </a>
+                    <div class="card border-primary">
+                      <div class="card-body">
+                        <h5 class="card-title">Analytics Chart Data</h5>
+                        <i class="fas fa-table lock-icon"></i>
+                        <p class="card-text">Extract data from hypercube</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <br>
+                <div class="row justify-content-center">
+                  <div class="col-sm-2 our-research__container ">
+                    <a class="nav-link" href="#field">
+                      <span class="link"></span>
+                    </a>
+                    <div class="card border-primary ">
+                      <div class="card-body">
+                        <h5 class="card-title">Field</h5>
+                        <i class="fas fa-filter lock-icon"></i>
+                        <p class="card-text">Embed a list of field values</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-sm-2 our-research__container ">
+                    <a class="nav-link" href="#sheet-nav">
+                      <span class="link"></span>
+                    </a>
+                    <div class="card border-primary ">
+                      <div class="card-body">
+                        <h5 class="card-title">Sheet Navigation</h5>
+                        <i class="fas fa-sheet-plastic lock-icon"></i>
+                        <p class="card-text">List sheets and display a single one</p>
+                      </div>
+                    </div>
+                  </div>
+
+
+                  <div class="col-sm-2 our-research__container ">
+                    <a class="nav-link" href="#classic-chart">
+                      <span class="link"></span>
+                    </a>
+                    <div class="card border-primary ">
+                      <div class="card-body">
+                        <h5 class="card-title">Classic Chart</h5>
+                        <i class="fas fa-backward lock-icon"></i>
+                        <p class="card-text">Embed non-Nebula.js charts</p>
+                      </div>
+                    </div>
+                  </div>
+
+
+                </div>
+
+              </div>
+
+            </div>
+            <div id="classic-app" class="container content-item" style="display: none;">
+              <h1>
+                qlik-embed classic/app embeds the full Qlik Sense client in the
+                page.
+              </h1>
+              <div class="classic-app">
+                <qlik-embed ui="classic/app" app-id="" sheet-id="uyXmT"></qlik-embed>
+              </div>
+            </div>
+            <div id="analytics-chart" class="container content-item" style="display: none;">
+              <h1>qlik-embed analytics/chart embeds a chart in the page.</h1>
+              <!-- <h3><i>Renders only nebula.js visualizations.</i></h3> -->
+              <div class="viz">
+                <qlik-embed id="visualization" ui="analytics/chart" app-id="" object-id="QaqJ"></qlik-embed>
+              </div>
+            </div>
+            <div id="analytics-chart-data" class="container content-item" style="display: none;">
+              <h1>Direct access to analytics application data via existing qlik-embed object.</h1>
+              <h3>
+                <code>let chartData = objLayout.qHyperCube.qDataPages[0].qMatrix;</code>
+              </h3>
+
+              <div id="chart-data" class="viz"></div>
+            </div>
+            <div id="field" class="container content-item" style="display: none;">
+              <h1>qlik-embed field embeds a list box in the page.</h1>
+              <div class="viz">
+                <qlik-embed ui="field" app-id="" field-id="City"></qlik-embed>
+              </div>
+            </div>
+            <div id="sheet-nav" class="container content-item" style="display: none;">
+              <h1>
+                qlik-embed analytics/sheet with custom sheet navigation.
+              </h1>
+              <select id="sheetdrop" name="SheetList" class="sheet-drop"></select>
+              <div class="selections-bar">
+                <qlik-embed ui="selections" app-id="">
+                </qlik-embed>
+              </div>
+              <div class="classic-app">
+                <qlik-embed id="sheet-change" ui="analytics/sheet" app-id="" object-id="uyXmT"></qlik-embed>
+              </div>
+            </div>
+            <div id="classic-chart" class="container content-item" style="display: none;">
+              <h1>Load non-nebula charts with classic/chart.</h1>
+              <div class="classic-app">
+                <qlik-embed id="classicChartObject" ui="classic/chart" app-id="" object-id="HPJpkhX"></qlik-embed>
+              </div>
+            </div>
+          </div>
+
+
+        </div>
+      </main>
+      <footer class="py-4 bg-light mt-auto">
+        <div class="container-fluid px-4">
+
+          <div class="d-flex align-items-center justify-content-between small">
+            <div class="text-muted">Copyright &copy; Your Website 2024</div>
+            <div>
+              <a href="#">Privacy Policy</a>
+              &middot;
+              <a href="#">Terms &amp; Conditions</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+    crossorigin="anonymous"></script>
+
+  <script type="module">
+
+    //function hide/show the page elements based on user selection
+    async function addEventListeners() {
+      const navLinks = document.querySelectorAll(".nav-link");
+      const contentItems = document.querySelectorAll(".content-item");
+      navLinks.forEach((link) => {
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          const targetId = link.getAttribute("href").substring(1);
+          contentItems.forEach((item) => {
+            if (item.id === targetId) {
+              item.style.display = "block";
+            } else {
+              item.style.display = "none";
+            }
+          });
+        });
+      });
+    }
+
+    // Function for 'Analytics chart data' to get the Hypercube and render a table
+    // in dom element 'chart-data' with the retrieved dimensions and measures from
+    // the hypercube in element 'visualization'
+    async function updateTable() {
+
+      const hypercube = await getHypercube();
+
+      //Get the data from the visualization in the page
+      const element = document.getElementById("visualization");
+
+      let container = document.getElementById("chart-data");
+      let table = document.createElement("table");
+      let cols = Object.keys(hypercube);
+      let thead = document.createElement("thead");
+      let tr = document.createElement("tr");
+      cols.forEach((item) => {
+        let th = document.createElement("th");
+        th.textContent = item;
+        tr.appendChild(th);
+      });
+      thead.appendChild(tr);
+      table.appendChild(thead);
+
+      // Loop through the data arrays
+      for (let i = 0; i < hypercube["ProducTypes"].length; i++) {
+        // Create table row
+        const row = document.createElement('tr');
+
+        // Create table data cell for ProductTypes
+        const productTypeCell = document.createElement('td');
+        productTypeCell.textContent = hypercube["ProducTypes"][i];
+        row.appendChild(productTypeCell);
+
+        // Create table data cell for SalesAmount
+        const salesAmountCell = document.createElement('td');
+        salesAmountCell.textContent = hypercube["SalesAmount"][i];
+        row.appendChild(salesAmountCell);
+
+        // Append row to table
+        table.appendChild(row);
+      }
+      container.appendChild(table);
+    }
+
+    // Function for 'Analytics Chart' to populate the element 'sheet-change' with
+    // a sheet list returned via qlik/api (getSheets() is in script.js)
+    async function updateSheetsList() {
+      const sheetList = await getSheets();
+      const element_ = document.getElementById("sheet-change");
+
+      let dd = document.getElementById("sheetdrop");
+      dd.length = 0;
+      let defaultOption = document.createElement("option");
+      defaultOption.text = "Select a sheet to navigate to";
+      dd.add(defaultOption);
+      dd.selectedIndex = 0;
+
+      let option;
+      for (let i = 0; i < sheetList.length; i++) {
+        option = document.createElement("option");
+        option.text = sheetList[i].qMeta.title;
+        option.value = sheetList[i].qMeta.id;
+        dd.add(option);
+      }
+
+      dd.addEventListener("change", function () {
+        if (dd.selectedIndex > 0) {
+          let selOption = dd.options[dd.selectedIndex];
+          element_.setAttribute("object-id", selOption.value);
+        }
+      });
+    }
+
+    // Function to set Qlik-embed head script
+    async function updateHeaders(configParams) {
+
+      var qlik_embed_script = document.createElement('script');
+      qlik_embed_script.setAttribute('crossorigin', 'anonymous');
+      qlik_embed_script.setAttribute('type', 'application/javascript');
+      qlik_embed_script.setAttribute('src', 'https://cdn.jsdelivr.net/npm/@qlik/embed-web-components');
+      qlik_embed_script.setAttribute('data-host', 'https://' + configParams.tenantHostname);
+      qlik_embed_script.setAttribute('data-client-id', configParams.oAuthClientId);
+      qlik_embed_script.setAttribute('data-get-access-token', 'getAccessToken');
+      qlik_embed_script.setAttribute('data-auth-type', 'OAuth2');
+      await document.head.appendChild(qlik_embed_script);
+    }
+
+    // Function to update template qlik-embed tags with the source appId
+    async function updateQlikEmbedTags(configParams) {
+      const appId = configParams.appId;
+      var appIds = document.querySelectorAll('[app-id]');
+
+      for (var i = 0; i < appIds.length; i++) {
+        appIds[i].setAttribute('app-id', appId);
+      }
+
+    }
+
+    // On load async function to load all page content in dependency order
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Retrieve config parameters from backend server
+      var configParams = JSON.parse(await getConfigParameter());
+      await updateHeaders(configParams);
+      await addEventListeners()
+      await updateSheetsList();
+      await updateTable();
+      await updateQlikEmbedTags(configParams);
+    });
+
+
+  </script>
+
+
+</body>
+
+</html>
