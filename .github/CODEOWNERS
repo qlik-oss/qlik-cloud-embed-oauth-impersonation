@@ -1,0 +1,2 @@
+# by default, require oem
+*       @qlik-oss/oem
