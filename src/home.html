@@ -60,9 +60,9 @@
               <hr class="sidebar-divider">
               <br>
               <div class="sb-sidenav-menu-heading">EMBEDDING STRATEGIES</div>
-              <a class="nav-link" href="#classic-app">
-                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                Classic App
+              <a class="nav-link" href="#sheet-nav">
+                <div class="sb-nav-link-icon"><i class="fas fa-sheet-plastic"></i></div>
+                Analytics Sheet
               </a>
               <a class="nav-link" href="#analytics-chart">
                 <div class="sb-nav-link-icon"><i class="fas fa-chart-line"></i></div>
@@ -76,9 +76,9 @@
                 <div class="sb-nav-link-icon"><i class="fas fa-filter"></i></div>
                 Field
               </a>
-              <a class="nav-link" href="#sheet-nav">
-                <div class="sb-nav-link-icon"><i class="fas fa-sheet-plastic"></i></div>
-                Sheet Navigation
+              <a class="nav-link" href="#classic-app">
+                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                Classic App
               </a>
               <a class="nav-link" href="#classic-chart">
                 <div class="sb-nav-link-icon"><i class="fas fa-backward"></i></div>
@@ -105,14 +105,14 @@
                   <br>
                   <div class="row justify-content-center">
                     <div class="col-sm-2 our-research__container ">
-                      <a class="nav-link" href="#classic-app">
+                      <a class="nav-link" href="#sheet-nav">
                         <span class="link"></span>
                       </a>
-                      <div class="card border-primary">
+                      <div class="card border-primary ">
                         <div class="card-body">
-                          <h5 class="card-title">Classic App</h5>
-                          <i class="fas fa-tachometer-alt lock-icon"></i>
-                          <p class="card-text">Embed the entire Qlik App</p>
+                          <h5 class="card-title">Analytics Sheet</h5>
+                          <i class="fas fa-sheet-plastic lock-icon"></i>
+                          <p class="card-text">Sheet with selection bar and sheet list</p>
                         </div>
                       </div>
                     </div>
@@ -156,14 +156,14 @@
                       </div>
                     </div>
                     <div class="col-sm-2 our-research__container ">
-                      <a class="nav-link" href="#sheet-nav">
+                      <a class="nav-link" href="#classic-app">
                         <span class="link"></span>
                       </a>
-                      <div class="card border-primary ">
+                      <div class="card border-primary">
                         <div class="card-body">
-                          <h5 class="card-title">Sheet Navigation</h5>
-                          <i class="fas fa-sheet-plastic lock-icon"></i>
-                          <p class="card-text">List sheets and display a single one</p>
+                          <h5 class="card-title">Classic App</h5>
+                          <i class="fas fa-tachometer-alt lock-icon"></i>
+                          <p class="card-text">Embed the entire Qlik App</p>
                         </div>
                       </div>
                     </div>
@@ -373,11 +373,11 @@
       document.addEventListener("DOMContentLoaded", async () => {
         // Retrieve config parameters from backend server
         var configParams = JSON.parse(await getConfigParameter());
+        await updateQlikEmbedTags(configParams);
         await updateHeaders(configParams);
         await addEventListeners()
         await updateSheetsList();
         await updateTable();
-        await updateQlikEmbedTags(configParams);
       });
   
   
