@@ -1,5 +1,5 @@
 /*
- * Config file: change the parameters according to your integration scenario.
+ * Config file: rename this to `config.js`, and update the values in `myConfig`.
  * Do not version control this file, and consider using .env files if you require
  * a more common integration pattern.
  */
