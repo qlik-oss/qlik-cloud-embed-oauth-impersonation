@@ -12,7 +12,7 @@ for your project.
 ## Introduction
 
 The goal of this project is to show how easy it is to deploy analytics into your
-solution with a seamless login experience for your users, leveraging Qlik's qlik-embed,
+solution with a seamless login experience for your users from your web app or portal when you don't have a backend identity provider for your users to authenticate to directly. This leverages Qlik's qlik-embed,
 qlik/api, and OAuth machine-to-machine impersonation capabilities.
 
 <img src="src/img/screenshot.png" width="600" alt="Screenshot of resulting embedded application"/>
