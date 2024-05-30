@@ -106,7 +106,7 @@ app.get("/appsheets", async (req, res) => {
           userId,
           scope: "user_default",
         },
-        withoutData: true,
+        withoutData: false,
       });
       // get the "qix document (qlik app)"
       const app = await appSession.getDoc();
