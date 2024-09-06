@@ -1,22 +1,25 @@
 /*
- * Config file: rename this to `config.js`, and update the values in `myConfig`.
- * Do not version control this file, and consider using .env files if you require
- * a more common integration pattern.
+ * Config file: This file no longer requires manual updates to values,
+ * as they are now managed through environment variables.
  */
+import dotenv from 'dotenv';
 
-// This is the hard-coded config for the M2M steps in impersonation, exposed below by getParameters().
+// Load environment variables from .env file
+const envFilePath = `env/${process.env.NODE_ENV}.env`;
+dotenv.config({ path: envFilePath });
+
+// This is the configuration for the M2M steps in impersonation, exposed below by getParameters().
 const myConfig = {
-  tenantHostname: "your-tenant.us.qlikcloud.com", // format: "your-tenant.us.qlikcloud.com" (no protocol or trailing slashes)
-  oAuthClientId: "5058cc83b4b6fae428e2c90e77123",
-  oAuthClientSecret:
-    "15932095c804414fd7a3b882fa2bf874bf126f19ae39d83deb123",
-  appId: "b0702f9b-46a3-46ff-8c8e-3a5f83a9b898",
+  tenantUri: process.env.TENANT_URI,
+  oAuthBackEndClientId: process.env.OAUTH_BACKEND_CLIENT_ID,
+  oAuthBackEndClientSecret: process.env.OAUTH_BACKEND_CLIENT_SECRET,
+  appId: process.env.APP_ID,
 };
 
-// Create a cut-down config without the client secret for use in the qlik-embed HEAD tag
+// This is a cut-down config without the client secret for use in the qlik-embed HEAD tag.
 const myParamsConfig = {
-  tenantHostname: myConfig.tenantHostname,
-  oAuthClientId: myConfig.oAuthClientId,
+  tenantUri: myConfig.tenantUri,
+  oAuthFrontEndClientId: process.env.OAUTH_FRONTEND_CLIENT_ID,
   appId: myConfig.appId,
 };
 
