@@ -1,4 +1,3 @@
-
 # Embed Qlik Sense using qlik-embed and emulated SSO (Single Sign On) via OAuth impersonation
 
 > [!IMPORTANT]
