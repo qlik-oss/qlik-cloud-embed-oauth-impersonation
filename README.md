@@ -5,8 +5,7 @@
 > This project is not production ready. It is structured for learning and evaluation
 > of the qlik-embed project with a simple OAuth impersonation configuration.
 > Before beginning a production app, you should first review the [guiding principles for OAuth impersonation](https://qlik.dev/authenticate/oauth/guiding-principles-oauth-impersonation/)
-> and understand how to use [qlik-embed](https://qlik.dev/embed/qlik-embed/) and [qlik/api](https://qlik.dev/toolkits/qlik-api/). You should also use https rather than http
-for your project.
+> and understand how to use [qlik-embed](https://qlik.dev/embed/qlik-embed/) and [qlik/api](https://qlik.dev/toolkits/qlik-api/). You should also use HTTPS rather than HTTP for your project.
 
 
 ## Introduction
