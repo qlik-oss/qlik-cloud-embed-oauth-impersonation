@@ -16,7 +16,7 @@ capabilities.
 
 <img src="src/img/screenshot.png" width="600" alt="Screenshot of resulting embedded app"/>
 
-It showcases several embedding techniques, such as:
+This project showcases several embedding techniques, such as:
 
 - qlik-embed `classic/app`: full sheet embed supporting the native experience
 - qlik-embed `analytics/sheet`: lightweight full sheet embed
