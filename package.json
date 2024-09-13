@@ -2,7 +2,11 @@
   "type": "module",
   "dependencies": {
     "@qlik/api": "^1.0.0",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-session": "^1.18.0"
+  },
+  "scripts": {
+    "dev": "NODE_ENV=dev node server.js"
   }
 }

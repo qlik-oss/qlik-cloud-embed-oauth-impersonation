@@ -1,3 +1,4 @@
+import dotenv from 'dotenv';
 import express from "express";
 import session from "express-session";
 import bodyParser from "body-parser";
@@ -10,6 +11,10 @@ import {
 import { fileURLToPath } from "url";
 import { myConfig, getParameters } from "./config/config.js";
 
+// Load environment variables from .env file
+const envFilePath = `env/${process.env.NODE_ENV}.env`;
+dotenv.config({ path: envFilePath });
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 var app = express();
 app.use(express.static("src"));
@@ -18,18 +23,18 @@ const PORT = process.env.PORT || 3000;
 // Build qlik/api config (includes M2M secret)
 const config = {
   authType: "oauth2",
-  host: "https://" + myConfig.tenantHostname,
-  clientId: myConfig.oAuthClientId,
-  clientSecret: myConfig.oAuthClientSecret,
+  host: myConfig.tenantUri,
+  clientId: myConfig.oAuthBackEndClientId,
+  clientSecret: myConfig.oAuthBackEndClientSecret,
   noCache: true,
 };
 
 qlikAuth.setDefaultHostConfig(config);
 
-// Configure session middleware
+// Configure session middleware using environment variable for session secret
 app.use(
   session({
-    secret: "secret-key",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
   })
