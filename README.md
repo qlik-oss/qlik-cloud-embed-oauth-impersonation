@@ -1,5 +1,5 @@
 
-# Embed Qlik Sense using qlik-embed and emulated SSO (Single Sign On) via OAuth impersonation
+# Embed Qlik Sense using qlik-embed and emulated SSO (Single Sign On) via OAuth impersonation 
 
 > [!IMPORTANT]
 > This project is not production ready, and is structured for learning and evaluation
