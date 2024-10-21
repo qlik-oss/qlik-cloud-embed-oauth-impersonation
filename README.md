@@ -65,9 +65,10 @@ Alternatively, you can download and extract the project files.
 
 ## Step 3. Set up environment variables
 
-1. Rename the `template.env` to `.env.dev`.
+1. Rename the `template.env` file to `.env.dev`.
 1. Edit the `.env.dev` file with values that match your Qlik Cloud deployment:
-    - `OAUTH_BACKEND_CLIENT_ID`, `OAUTH_BACKEND_CLIENT_SECRET`, `OAUTH_FRONTEND_CLIENT_ID`, and `OAUTH_FRONTEND_CLIENT_SECRET`: enter the credentials obtained when you created a new OAuth client in your Qlik Cloud management console.
+    - `OAUTH_BACKEND_CLIENT_ID` and `OAUTH_BACKEND_CLIENT_SECRET`: enter the credentials obtained when you created the OAuth M2M client in the Administration activity center.
+    - `OAUTH_FRONTEND_CLIENT_ID` and `OAUTH_FRONTEND_CLIENT_SECRET`: enter the credentials obtained when you created the OAuth M2M impersonation client in the Administration activity center.
       > Keep these secrets safe as they provide wide access to your tenant.
     - `SESSION_SECRET`: enter a random long string that will be used to sign the session ID cookie.
     - `TENANT_URI`: enter the hostname of the Qlik Cloud tenant against which the app will run, such as
