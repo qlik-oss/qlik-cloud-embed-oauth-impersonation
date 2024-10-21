@@ -1,2 +1,2 @@
 # by default, require oem
-*       @qlik-oss/oem
+*       @qlik-oss/oem @qlik-trial/pcm-dev
