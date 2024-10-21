@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import express from "express";
 import session from "express-session";
 import bodyParser from "body-parser";
@@ -9,32 +8,25 @@ import {
   qix as openAppSession,
 } from "@qlik/api";
 import { fileURLToPath } from "url";
-import { myConfig, getParameters } from "./config/config.js";
+import { getFrontendConfig, getBackendConfig } from "./config/config.js";
 
-// Load environment variables from .env file
-const envFilePath = `env/${process.env.NODE_ENV}.env`;
-dotenv.config({ path: envFilePath });
+// Load config
+const { appSettings, configBackend, configFrontend }  = await getBackendConfig();
+const { myParamsConfig }  = await getFrontendConfig();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 var app = express();
 app.use(express.static("src"));
-const PORT = process.env.PORT || 3000;
+const PORT = appSettings.port || 3000;
 
-// Build qlik/api config (includes M2M secret)
-const config = {
-  authType: "oauth2",
-  host: myConfig.tenantUri,
-  clientId: myConfig.oAuthBackEndClientId,
-  clientSecret: myConfig.oAuthBackEndClientSecret,
-  noCache: true,
-};
+qlikAuth.setDefaultHostConfig(configFrontend);
 
-qlikAuth.setDefaultHostConfig(config);
+
 
 // Configure session middleware using environment variable for session secret
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    secret: appSettings.secret,
     resave: false,
     saveUninitialized: true,
   })
@@ -52,7 +44,7 @@ async function getQlikUser(userEmail) {
     },
     {
       hostConfig: {
-        ...config,
+        ...configBackend,
         scope: "user_default",
       },
     }
@@ -85,7 +77,7 @@ app.post("/access-token", async (req, res) => {
     try {
       const accessToken = await qlikAuth.getAccessToken({
         hostConfig: {
-          ...config,
+          ...configFrontend,
           userId,
           scope: "user_default",
         },
@@ -100,14 +92,14 @@ app.post("/access-token", async (req, res) => {
 });
 
 // Get sheet list using qlik/api
-app.get("/appsheets", async (req, res) => {
+app.get("/app-sheets", async (req, res) => {
   const userId = req.session.userId;
   if (typeof userId !== "undefined" && userId !== null) {
     try {
       const appSession = openAppSession.openAppSession({
-        appId: (await getParameters()).appId,
+        appId: myParamsConfig.appId,
         hostConfig: {
-          ...config,
+          ...configFrontend,
           userId,
           scope: "user_default",
         },
@@ -117,9 +109,9 @@ app.get("/appsheets", async (req, res) => {
       const app = await appSession.getDoc();
 
       // app is now fully typed including sense-client mixins
-      const sheetlist = await app.getSheetList();
+      const sheetList = await app.getSheetList();
 
-      res.send(sheetlist);
+      res.send(sheetList);
     } catch (err) {
       console.log(err);
       res.status(401).send("Unable to retrieve sheet definitions.");
@@ -132,12 +124,13 @@ app.get("/appsheets", async (req, res) => {
 // Get Parameters: userId not needed for the example, but needed in case you want to retrieve per tenant basis parameters
 app.post("/config", async (req, res) => {
   const userId = req.session.userId;
-  const params = await getParameters(userId);
-  res.status(200).send(params);
+  const params = await getFrontendConfig(userId);
+  res.status(200).send(params.myParamsConfig);
 });
 
 // Set up a route for the Home page
 app.get("/", async (req, res) => {
+ 
   const email = req.session.email;
 
   (async () => {
@@ -151,13 +144,13 @@ app.get("/", async (req, res) => {
         const currentUser = await qlikUsers.createUser(
           {
             name: "oauth_gen_" + req.session.email,
-            email: req.session.email,
+            email: "oauth_gen_" + req.session.email,
             subject: "oauth_gen_" + req.session.email,
             status: "active",
           },
           {
             hostConfig: {
-              ...config,
+              ...configBackend,
               scope: "admin_classic user_default",
             },
           }
@@ -182,16 +175,15 @@ app.get("/logout", async (req, res) => {
   res.redirect("/login");
 });
 
-
 // Get hypercube data (hardcoded values for the provided example app)
 app.get("/hypercube", async (req, res) => {
   const userId = req.session.userId;
   if (typeof userId !== "undefined" && userId !== null) {
     try {
       const appSession = openAppSession.openAppSession({
-        appId: (await getParameters()).appId,
+        appId: myParamsConfig.appId,
         hostConfig: {
-          ...config,
+          ...configFrontend,
           userId,
           scope: "user_default",
         },
@@ -230,16 +222,16 @@ app.get("/hypercube", async (req, res) => {
       let data = layout.qHyperCube.qDataPages[0].qMatrix;
 
       const columns = layout.qHyperCube.qSize.qcx;
-      const totalheight = layout.qHyperCube.qSize.qcy;
-      const pageheight = 5;
-      const numberOfPages = Math.ceil(totalheight / pageheight);
+      const totalHeight = layout.qHyperCube.qSize.qcy;
+      const pageHeight = 5;
+      const numberOfPages = Math.ceil(totalHeight / pageHeight);
 
       for (let i = 1; i < numberOfPages; i++) {
         const page = {
-          qTop: pageheight * i,
+          qTop: pageHeight * i,
           qLeft: 0,
           qWidth: columns,
-          qHeight: pageheight,
+          qHeight: pageHeight,
         };
         const row = await model.getHyperCubeData("/qHyperCubeDef", [page]);
         data.push(...row[0].qMatrix);
@@ -261,7 +253,7 @@ app.get("/hypercube", async (req, res) => {
       res.send(hypercubeDict);
     } catch (err) {
       console.log(err);
-      res.status(401).send("Unable to retrieve sheet definitions.");
+      res.status(401).send("Unable to retrieve hypercube.");
     }
   } else {
     res.redirect("/login");

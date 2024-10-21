@@ -1,15 +1,17 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <link rel="stylesheet" type="text/css" href="/css/login.css" />
-    <link rel="stylesheet" type="text/css" href="/css/styles.css" />
-    <title>My Portal - login</title>
-  </head>
 
-  <body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" type="text/css" href="/css/login.css" />
+  <link rel="stylesheet" type="text/css" href="/css/styles.css" />
+  <title>My Company - login</title>
+</head>
+
+<body>
   <section class="h-100 gradient-form" style="background-color: #eee;">
     <div class="container py-5 h-100">
       <div class="row d-flex justify-content-center align-items-center h-100">
@@ -18,35 +20,40 @@
             <div class="row g-0">
               <div class="col-lg-6">
                 <div class="card-body p-md-5 mx-md-4">
-  
+
                   <div class="text-center">
-                    <img src="img/company-logo.svg"
-                      style="width: 185px;" alt="logo">
-                      <br></br>
-                    <h4 class="mt-1 mb-5 pb-1">Embedded Analytics Portal</h4>
+                    <img src="img/company-logo.svg" style="width: 185px;" alt="logo">
+                    <br></br>
+                    <h4 class="mt-1 mb-5 pb-1">My Company's App</h4>
                   </div>
-  
+
                   <form action="/login" method="post">
                     <p>Please login to your account</p>
-  
+
                     <div class="form-outline mb-4">
-                      <input type="email" id="email" name="email" class="form-control" placeholder="email address" value="" required />
+                      <input type="email" id="email" name="email" class="form-control" placeholder="email address"
+                        value="" required />
                       <br>
-                      <input type="password" id="password" name="password" class="form-control" placeholder="password" value="" />
+                      <input type="password" id="password" name="password" class="form-control" placeholder="password"
+                        value="" />
                     </div>
-                
+
                     <div class="text-center pt-1 mb-5 pb-1">
-                      <button class="btn btn-primary btn-block fa-lg mb-3" type="submit" style="background-color:#112140; border-color: #CCA58C;">Login</button><br></br>
+                      <button class="btn btn-primary btn-block fa-lg mb-3" type="submit"
+                        style="background-color:#112140; border-color: #CCA58C;">Login</button><br></br>
                       <a class="text-muted" href="#!">Forgot password?</a>
                     </div>
-                </form>
+                  </form>
                 </div>
               </div>
               <div class="col-lg-6 d-flex align-items-center gradient-custom-2">
                 <div class="text-white px-3 py-4 p-md-5 mx-md-4">
-                  <h4 class="mb-4">Embed Qlik Cloud Analytics using qlik-embed, qlik/api, and OAuth impersonation</h4>
-                  <p class="small mb-0">No password is required or stored.</p>
-                  <p class="small mb-0">This is a demo of various embedding components, and should not be used in production. Refer to included readme for additional information.</p>
+                  <h4 class="mb-4">An example embedding Qlik Cloud Analytics using qlik-embed, qlik/api, and OAuth
+                    impersonation</h4>
+                  <p class="small mb-0">Enter any email address. This will create a new user on your tenant, with the
+                    prefix "oauth_gen_" to ensure no collision with existing users.</p>
+                  <p class="small mb-0">Refer to the README for this project for hardening steps required before using
+                    this example in production.</p>
                 </div>
               </div>
             </div>
