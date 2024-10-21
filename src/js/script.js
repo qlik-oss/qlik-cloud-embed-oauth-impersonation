@@ -1,4 +1,4 @@
-//Function to retrieve the M2M impersonation token from the backend server
+// Retrieves a M2M impersonation token from the backend
 async function getAccessToken() {
   const response = await fetch("/access-token", {
     method: "POST",
@@ -9,16 +9,16 @@ async function getAccessToken() {
   if (response.status === 200) {
     return response.text();
   }
-  const err = new Error("Unexpected serverside authentication error");
+  const err = new Error("Unexpected server-side authentication error");
   err.status = response.status;
   err.detail;
   throw err;
 }
 
 
-//Function to retrieve the list of sheets of the app
+// Retrieve the list of sheets in the Qlik Sense app from the backend
 async function getSheets() {
-    const response = await fetch("/appsheets", {
+    const response = await fetch("/app-sheets", {
       method: "GET",
       credentials: "include",
       mode: "same-origin",
@@ -34,7 +34,7 @@ async function getSheets() {
 }
 
 
-//Function to retrieve an hypercube from the backend server
+// Retrieve a data set (hypercube) from the backend
 async function getHypercube() {
   const response = await fetch("/hypercube", {
     method: "GET",
@@ -52,7 +52,7 @@ async function getHypercube() {
 }
 
 
-//Function to retrieve the config parameters from the backend
+// Retrieve application connectivity parameters from the backend
 async function getConfigParameter() {
   const headers = new Headers();
   headers.append("Accept", "application/json");
@@ -67,7 +67,7 @@ async function getConfigParameter() {
   if (response.status === 200) {
     return response.text();
   }
-  const err = new Error("Unexpected serverside authentication error");
+  const err = new Error("Unexpected server-side authentication error");
   err.status = response.status;
   err.detail;
   throw err;
