@@ -57,7 +57,6 @@
                 <div class="sb-nav-link-icon"><i class="fas fa-house"></i></div>
                 Home
               </a>
-              <!-- Divider -->
               <hr class="sidebar-divider">
               <br>
               <div class="sb-sidenav-menu-heading">qlik-embed UIs</div>
@@ -193,13 +192,13 @@
                   page.
                 </h1>
                 <div class="classic-app">
-                  <qlik-embed ui="classic/app" app-id="" sheet-id="uyXmT"></qlik-embed>
+                  <qlik-embed ui="classic/app" app-id="" sheet-id=""></qlik-embed>
                 </div>
               </div>
               <div id="analytics-chart" class="container content-item" style="display: none;">
                 <h1>qlik-embed analytics/chart embeds a chart in the page.</h1>
                 <div class="viz">
-                  <qlik-embed id="visualization" ui="analytics/chart" app-id="" object-id="QaqJ"></qlik-embed>
+                  <qlik-embed id="visualization" ui="analytics/chart" app-id="" object-id=""></qlik-embed>
                 </div>
               </div>
               <div id="analytics-chart-data" class="container content-item" style="display: none;">
@@ -212,7 +211,7 @@
               <div id="field" class="container content-item" style="display: none;">
                 <h1>qlik-embed field embeds a list box in the page.</h1>
                 <div class="viz">
-                  <qlik-embed ui="field" app-id="" field-id="City"></qlik-embed>
+                  <qlik-embed ui="analytics/field" app-id="" field-id=""></qlik-embed>
                 </div>
               </div>
               <div id="sheet-nav" class="container content-item" style="display: none;">
@@ -221,17 +220,17 @@
                 </h1>
                 <select id="sheetdrop" name="SheetList" class="sheet-drop"></select>
                 <div class="selections-bar">
-                  <qlik-embed ui="selections" app-id="">
+                  <qlik-embed ui="analytics/selections" app-id="">
                   </qlik-embed>
                 </div>
                 <div class="classic-app">
-                  <qlik-embed id="sheet-change" ui="analytics/sheet" app-id="" object-id="uyXmT"></qlik-embed>
+                  <qlik-embed id="sheet-change" ui="analytics/sheet" app-id="" object-id=""></qlik-embed>
                 </div>
               </div>
               <div id="classic-chart" class="container content-item" style="display: none;">
                 <h1>Load non-nebula charts with classic/chart.</h1>
                 <div class="classic-app">
-                  <qlik-embed id="classicChartObject" ui="classic/chart" app-id="" object-id="QaqJ"></qlik-embed>
+                  <qlik-embed id="classicChartObject" ui="classic/chart" app-id="" object-id=""></qlik-embed>
                 </div>
               </div>
             </div>
@@ -364,11 +363,33 @@
 
       // Function to update template qlik-embed tags with the source appId
       async function updateQlikEmbedTags(configParams) {
-        const appId = configParams.appId;
-        var appIds = document.querySelectorAll('[app-id]');
-
-        for (var i = 0; i < appIds.length; i++) {
-          appIds[i].setAttribute('app-id', appId);
+        const qeObjects = document.querySelectorAll('qlik-embed');
+        for (var i = 0; i < qeObjects.length; i++) {
+          switch (qeObjects[i].getAttribute('ui')) {
+            case 'analytics/sheet':
+              qeObjects[i].setAttribute('app-id', configParams.appId);
+              qeObjects[i].setAttribute('object-id', configParams.sheetId);
+              break;
+            case 'analytics/chart':
+              qeObjects[i].setAttribute('app-id', configParams.appId);
+              qeObjects[i].setAttribute('object-id', configParams.objectId);
+              break;
+            case 'analytics/field':
+              qeObjects[i].setAttribute('app-id', configParams.appId);
+              qeObjects[i].setAttribute('field-id', configParams.fieldId);
+              break;
+            case 'analytics/selections':
+              qeObjects[i].setAttribute('app-id', configParams.appId);
+              break;
+            case 'classic/app':
+              qeObjects[i].setAttribute('app-id', configParams.appId);
+              qeObjects[i].setAttribute('sheet-id', configParams.sheetId);
+              break;
+            case 'classic/chart':
+              qeObjects[i].setAttribute('app-id', configParams.appId);
+              qeObjects[i].setAttribute('object-id', configParams.objectId);
+              break;
+          }
         }
 
       }
