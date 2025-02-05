@@ -8,6 +8,9 @@ simple OAuth impersonation configuration.
 [qlik-embed](https://qlik.dev/embed/qlik-embed/) and [qlik/api](https://qlik.dev/toolkits/qlik-api/). You should also
 use HTTPS rather than HTTP for your project.
 
+> [!NOTE]
+> Consider first reviewing the associated [embed Qlik Analytics tutorial](https://qlik.dev/embed/qlik-embed/quickstart/qlik-embed-impersonation-tutorial/) before you begin.
+
 ## Introduction
 
 The goal of this project is to show how to easily deploy analytics into your solution with a seamless login
