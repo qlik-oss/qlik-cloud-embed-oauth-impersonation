@@ -108,37 +108,49 @@
                       compatibility</a>.</p>
                   <br>
                   <div class="row justify-content-center">
-                    <div class="col-sm-2 our-research__container">
+                    <div class="col-sm-2 ">
                       <a class="nav-link" href="#sheet-nav">
                         <span class="link"></span>
                       </a>
                       <div class="card border-primary ">
                         <div class="card-body">
-                          <h5 class="card-title">Analytics Sheet</h5>
+                          <h5 class="card-title">Lightweight Sheet</h5>
                           <i class="fas fa-sheet-plastic lock-icon"></i>
                           <p class="card-text">Sheet with selection bar and sheet list</p>
                         </div>
                       </div>
                     </div>
-                    <div class="col-sm-2 our-research__container ">
+                    <div class="col-sm-2">
                       <a class="nav-link" href="#analytics-chart">
                         <span class="link"></span>
                       </a>
                       <div class="card border-primary">
                         <div class="card-body">
-                          <h5 class="card-title">Analytics Chart</h5>
+                          <h5 class="card-title">Lightweight Chart</h5>
                           <i class="fas fa-chart-line lock-icon"></i>
                           <p class="card-text">Embed a single chart/object</p>
                         </div>
                       </div>
                     </div>
-                    <div class="col-sm-2 our-research__container ">
+                    <div class="col-sm-2">
+                      <a class="nav-link" href="#analytics-chart">
+                        <span class="link"></span>
+                      </a>
+                      <div class="card border-primary">
+                        <div class="card-body">
+                          <h5 class="card-title">On-the-fly chart</h5>
+                          <i class="fas fa-chart-line lock-icon"></i>
+                          <p class="card-text">Embed a single chart/object</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-sm-2">
                       <a class="nav-link" href="#analytics-chart-data">
                         <span class="link"></span>
                       </a>
                       <div class="card border-primary">
                         <div class="card-body">
-                          <h5 class="card-title">Analytics Chart Data</h5>
+                          <h5 class="card-title">Just the data</h5>
                           <i class="fas fa-table lock-icon"></i>
                           <p class="card-text">Extract data from hypercube</p>
                         </div>
@@ -146,20 +158,21 @@
                     </div>
                   </div>
                   <br>
+                  <div style="clear: both;"></div>
                   <div class="row justify-content-center">
-                    <div class="col-sm-2 our-research__container ">
+                    <div class="col-sm-2">
                       <a class="nav-link" href="#field">
                         <span class="link"></span>
                       </a>
-                      <div class="card border-primary ">
+                      <div class="card border-primary">
                         <div class="card-body">
-                          <h5 class="card-title">Field</h5>
+                          <h5 class="card-title">Field selection filter</h5>
                           <i class="fas fa-filter lock-icon"></i>
-                          <p class="card-text">Embed a list of field values</p>
+                          <p class="card-text">Let users filter a field</p>
                         </div>
                       </div>
                     </div>
-                    <div class="col-sm-2 our-research__container ">
+                    <div class="col-sm-2">
                       <a class="nav-link" href="#classic-app">
                         <span class="link"></span>
                       </a>
@@ -167,11 +180,11 @@
                         <div class="card-body">
                           <h5 class="card-title">Classic App</h5>
                           <i class="fas fa-tachometer-alt lock-icon"></i>
-                          <p class="card-text">Embed the entire Qlik App</p>
+                          <p class="card-text">Provide access to an entire Qlik App</p>
                         </div>
                       </div>
                     </div>
-                    <div class="col-sm-2 our-research__container ">
+                    <div class="col-sm-2">
                       <a class="nav-link" href="#classic-chart">
                         <span class="link"></span>
                       </a>
@@ -179,7 +192,7 @@
                         <div class="card-body">
                           <h5 class="card-title">Classic Chart</h5>
                           <i class="fas fa-backward lock-icon"></i>
-                          <p class="card-text">Embed non-Nebula.js charts</p>
+                          <p class="card-text">Embed legacy charts and extensions</p>
                         </div>
                       </div>
                     </div>
@@ -225,6 +238,12 @@
                 </div>
                 <div class="classic-app">
                   <qlik-embed id="sheet-change" ui="analytics/sheet" app-id="" object-id=""></qlik-embed>
+                </div>
+              </div>
+              <div id="classic-chart" class="container content-item" style="display: none;">
+                <h1>Load legacy charts and extensions with classic/chart.</h1>
+                <div class="classic-app">
+                  <qlik-embed id="classicChartObject" ui="classic/chart" app-id="" object-id=""></qlik-embed>
                 </div>
               </div>
               <div id="classic-chart" class="container content-item" style="display: none;">
