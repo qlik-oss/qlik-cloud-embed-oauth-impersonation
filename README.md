@@ -80,6 +80,7 @@ Alternatively, you can download and extract the project files.
     - `SHEET_ID`: leave as is if using the provided demo app, otherwise change to a sheet ID from your app (used for the analytics/sheet and classic/app examples).
     - `OBJECT_ID`: leave as is if using the provided demo app, otherwise change to a chart (object) ID from your app (used for the analytics/chart and classic/chart examples).
     - `FIELD_ID`: leave as is if using the provided demo app, otherwise change to the name of a field from your app (used for the filter pane example).
+    - `ASSISTANT_ID`: enter the GUID of the Qlik Answers Assistant you wish to embed, or leave blank to omit this embedded UI.
 
 ## Step 4. Install the dependencies and run the app
 
