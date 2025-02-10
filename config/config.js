@@ -27,7 +27,8 @@ const getBackendConfig = async function (email) {
   // Build app settings
   const appSettings = {
     secret: process.env.SESSION_SECRET,
-    port: process.env.PORT
+    port: process.env.PORT,
+    userPrefix: process.env.USER_PREFIX,
   };
 
   // Build qlik/api backend config
