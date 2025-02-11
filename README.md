@@ -24,6 +24,9 @@ It showcases several embedding techniques, such as:
 - qlik-embed `classic/app`: full sheet embed supporting the native experience
 - qlik-embed `analytics/sheet`: lightweight full sheet embed
 - qlik-embed `classic/chart`: load legacy charts in a similar manner to `classic/app`
+- qlik-embed `analytics/chart`: lightweight charts in a similar manner to `analytics/sheet`
+- qlik-embed `analytics/chart` on-the-fly: lightweight charts generated on-the-fly (e.g. the chart doesn't need to be in the Qlik Sense app, it is defined in the web app instead)
+- qlik-embed `ai/assistant`: provides access to AI assistants in Qlik Answers
 - qlik-embed `field`: lightweight way to render a list box containing dimension values
 - qlik-embed `selections`: lightweight way to render a full Qlik Sense selections bar
 - qlik-embed retrieval of hypercube data from an existing object
