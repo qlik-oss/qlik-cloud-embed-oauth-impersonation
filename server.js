@@ -136,16 +136,16 @@ app.get("/", async (req, res) => {
   (async () => {
     if (email) {
       //check to see if a matching user email exists on the tenant
-      const currentUser = await getQlikUser(email);
+      const currentUser = await getQlikUser(appSettings.userPrefix + email);
 
       // If user doesn't exist, create it (optional)
       if (currentUser.data.length !== 1) {
         // We have no user, so create one prefixed with 'oauth_gen_' to avoid collision risk with real users
         const currentUser = await qlikUsers.createUser(
           {
-            name: "oauth_gen_" + req.session.email,
-            email: "oauth_gen_" + req.session.email,
-            subject: "oauth_gen_" + req.session.email,
+            name: appSettings.userPrefix + req.session.email,
+            email: appSettings.userPrefix + req.session.email,
+            subject: appSettings.userPrefix + req.session.email,
             status: "active",
           },
           {
