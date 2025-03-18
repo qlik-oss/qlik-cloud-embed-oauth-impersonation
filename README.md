@@ -72,18 +72,25 @@ Alternatively, you can download and extract the project files.
 ## Step 3. Set up environment variables
 
 1. Rename the `template.env` file to `.env.dev`.
-1. Edit the `.env.dev` file with values that match your Qlik Cloud deployment:
+2. Edit the `.env.dev` file with values that match your Qlik Cloud deployment:
     - `OAUTH_BACKEND_CLIENT_ID` and `OAUTH_BACKEND_CLIENT_SECRET`: enter the credentials obtained when you created the OAuth M2M client in the Administration activity center.
     - `OAUTH_FRONTEND_CLIENT_ID` and `OAUTH_FRONTEND_CLIENT_SECRET`: enter the credentials obtained when you created the OAuth M2M impersonation client in the Administration activity center.
       > Keep these secrets safe as they provide wide access to your tenant.
-    - `SESSION_SECRET`: enter a random long string that will be used to sign the session ID cookie.
     - `TENANT_URI`: enter the hostname of the Qlik Cloud tenant against which the app will run, such as
     `z29kgagw312sl0g.eu.qlikcloud.com`.
     - `APP_ID`: enter the app GUID for the Qlik Sense app you uploaded to your tenant (used for analytics/sheet, classic/app, analytics/chart and classic/chart examples).
-    - `SHEET_ID`: leave as is if using the provided demo app, otherwise change to a sheet ID from your app (used for the analytics/sheet and classic/app examples).
-    - `OBJECT_ID`: leave as is if using the provided demo app, otherwise change to a chart (object) ID from your app (used for the analytics/chart and classic/chart examples).
-    - `FIELD_ID`: leave as is if using the provided demo app, otherwise change to the name of a field from your app (used for the filter pane example).
     - `ASSISTANT_ID`: enter the GUID of the Qlik Answers Assistant you wish to embed, or leave blank to omit this embedded UI.
+3. (Optional) If you are using an app other than the provided Qlik Sense application,
+   configure the following:
+    - `SHEET_ID`: a sheet ID from your app (used for the analytics/sheet and classic/app examples).
+    - `OBJECT_ID`: a chart (object) ID from your app (used for the analytics/chart and classic/chart examples).
+    - `FIELD_ID`: a field from your app (used for the filter pane example).
+    - `HYPERCUBE_DIMENSION`: a field to use as a dimension for the hypercube (data) example.
+    - `HYPERCUBE_MEASURE`: a measure expression to use as a measure for the hypercube (data) example.
+4. (Optional) If you wish to further configure your web app and integration, update:
+   - `SESSION_SECRET`: enter a random long string that will be used to sign the session.
+   - `PORT`: specify the port the web app will be hosted app when you run it with `npm run dev`.
+   - `USER_PREFIX`: enter the prefix that new users will be created with when logging into the web app.
 
 ## Step 4. Install the dependencies and run the app
 
