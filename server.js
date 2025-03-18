@@ -247,13 +247,13 @@ app.get("/hypercube", async (req, res) => {
       }
 
       var hypercubeDict = {};
-      hypercubeDict["ProducTypes"] = productTypes;
+      hypercubeDict["ProductTypes"] = productTypes;
       hypercubeDict["SalesAmount"] = salesAmount;
 
       res.send(hypercubeDict);
     } catch (err) {
       console.log(err);
-      res.status(401).send("Unable to retrieve hypercube.");
+      res.status(500).send("Unable to retrieve hypercube.");
     }
   } else {
     res.redirect("/login");
