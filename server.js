@@ -8,6 +8,8 @@ import {
 } from "@qlik/api";
 import { fileURLToPath } from "url";
 import { getFrontendConfig, getBackendConfig } from "./config/config.js";
+import csrf from "csurf"; // Add CSRF protection
+import cookieParser from "cookie-parser"; // Required for CSRF
 
 // Load config
 const { appSettings, configBackend, configFrontend } = await getBackendConfig();
@@ -21,19 +23,30 @@ const PORT = appSettings.port || 3000;
 // Set default auth config
 qlikAuth.setDefaultHostConfig(configFrontend);
 
-// Configure session middleware 
+// Configure cookie parser middleware (required for csrf)
+app.use(cookieParser());
+
+// Configure session middleware with secure settings
 app.use(
   session({
     secret: appSettings.secret,
     resave: false,
-    saveUninitialized: true,
-    maxAge: 3600000
+    saveUninitialized: false,
+    cookie: { 
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true, // Prevent client-side JS from reading the cookie
+      maxAge: 3600000, // 1 hour
+      sameSite: 'strict' // Protect against CSRF
+    }
   })
 );
 
 // Use express built-in parsers
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Setup CSRF protection (use session rather than cookie)
+const csrfProtection = csrf({ cookie: false });
 
 // Create a reusable function for Qlik app sessions
 async function getQlikAppSession(userId) {
@@ -77,8 +90,25 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// API routes
-app.post("/access-token", requireAuth, async (req, res) => {
+// Apply CSRF protection to routes that change state
+app.post("/login", csrfProtection, async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).send("Please provide an email");
+  }
+  
+  try {
+    req.session.email = email;
+    console.log("Logging in user:", email);
+    res.redirect("/");
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).send("Login failed");
+  }
+});
+
+// API routes that need CSRF protection
+app.post("/access-token", [requireAuth, csrfProtection], async (req, res) => {
   try {
     const accessToken = await qlikAuth.getAccessToken({
       hostConfig: {
@@ -95,6 +125,17 @@ app.post("/access-token", requireAuth, async (req, res) => {
   }
 });
 
+app.post("/config", [requireAuth, csrfProtection], async (req, res) => {
+  try {
+    const params = await getFrontendConfig(req.session.userId);
+    res.json(params.myParamsConfig);
+  } catch (err) {
+    console.error("Config error:", err);
+    res.status(500).send("Unable to retrieve configuration");
+  }
+});
+
+// Read-only API routes don't need CSRF protection
 app.get("/app-sheets", requireAuth, async (req, res) => {
   try {
     const appSession = await getQlikAppSession(req.session.userId);
@@ -104,16 +145,6 @@ app.get("/app-sheets", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("Sheet error:", err);
     res.status(500).send("Unable to retrieve sheet definitions");
-  }
-});
-
-app.post("/config", requireAuth, async (req, res) => {
-  try {
-    const params = await getFrontendConfig(req.session.userId);
-    res.json(params.myParamsConfig);
-  } catch (err) {
-    console.error("Config error:", err);
-    res.status(500).send("Unable to retrieve configuration");
   }
 });
 
@@ -177,27 +208,18 @@ app.get("/hypercube", requireAuth, async (req, res) => {
 });
 
 // Page routes
-app.get("/login", (req, res) => {
+app.get("/login", csrfProtection, (req, res) => {
+  // Add CSRF token to login page
   res.sendFile(path.join(__dirname, "/src/login.html"));
 });
 
-app.post("/login", async (req, res) => {
-  const { email } = req.body;
-  if (!email) {
-    return res.status(400).send("Please provide an email");
-  }
-  
-  try {
-    req.session.email = email;
-    console.log("Logging in user:", email);
-    res.redirect("/");
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).send("Login failed");
-  }
+// Add a route to get CSRF token for AJAX requests
+app.get("/csrf-token", csrfProtection, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
 });
 
-app.get("/", async (req, res) => {
+// Root route
+app.get("/", csrfProtection, async (req, res) => {
   const email = req.session.email;
   if (!email) {
     return res.redirect("/login");
@@ -231,6 +253,8 @@ app.get("/", async (req, res) => {
       console.log("Found existing user:", currentUser.data[0].id);
     }
     
+    const csrfToken = req.csrfToken();
+    req.session.csrfToken = csrfToken;
     res.sendFile(path.join(__dirname, "/src/home.html"));
   } catch (error) {
     console.error("Error setting up user:", error);
@@ -239,8 +263,9 @@ app.get("/", async (req, res) => {
 });
 
 app.get("/logout", (req, res) => {
-  req.session.destroy();
-  res.redirect("/login");
+  req.session.destroy(() => {
+    res.redirect("/login");
+  });
 });
 
 // Start the server

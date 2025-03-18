@@ -26,21 +26,22 @@
                     <h4 class="mt-1 mb-5 pb-1">My Company's App</h4>
                   </div>
 
-                  <form action="/login" method="post">
+                  <form id="loginForm" action="/login" method="post">
+                    <input type="hidden" id="csrfToken" name="_csrf">
                     <p>Please login to your account</p>
 
                     <div class="form-outline mb-4">
                       <label for="email">Email address</label>
-                      <input type="email" id="email" name="email" class="form-control"
-                        placeholder="Enter your email address" required />
+                        <input type="email" id="email" name="email" class="form-control"
+                        placeholder="Enter your email address" value="test@test.com" required />
                       <label for="password" class="mt-3">Password</label>
                       <input type="password" id="password" name="password" class="form-control"
                         placeholder="Enter your password" />
                     </div>
 
                     <div class="text-center pt-1 mb-5 pb-1">
-                      <button class="btn btn-primary btn-block fa-lg mb-3" type="submit"
-                        style="background-color:#112140; border-color: #CCA58C;">Login</button><br></br>
+                      <button id="loginButton" class="btn btn-primary btn-block fa-lg mb-3" type="submit"
+                        style="background-color:#112140; border-color: #CCA58C;" disabled>Login</button><br></br>
                       <a class="text-muted" href="#!">Forgot password?</a>
                     </div>
                   </form>
@@ -62,4 +63,26 @@
       </div>
     </div>
   </section>
+  
+  <script>
+    // Fetch CSRF token when page loads
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const response = await fetch('/csrf-token');
+        if (response.ok) {
+          const data = await response.json();
+          document.getElementById('csrfToken').value = data.csrfToken;
+          // Enable login button once we have the token
+          document.getElementById('loginButton').disabled = false;
+        } else {
+          console.error('Error fetching CSRF token:', response.status);
+          alert('Could not initialize security features. Please refresh the page or contact support.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Could not initialize security features: ' + error.message);
+      }
+    });
+  </script>
 </body>
+</html>
