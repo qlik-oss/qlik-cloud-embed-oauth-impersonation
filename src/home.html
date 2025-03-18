@@ -277,7 +277,6 @@
       async function updateTable() {
         try {
           const response = await getHypercube();
-          console.log("Hypercube response:", response);
 
           // Since the response doesn't have a status property, we need to check if it's valid
           if (!response || response.error) {
@@ -285,9 +284,6 @@
             console.error("Failed to retrieve hypercube data.", response?.message || "");
             return;
           }
-
-          const hypercube = response;
-          console.log("Hypercube data structure:", hypercube);
 
           if (!hypercube.ProductTypes || !hypercube.SalesAmount) {
             document.getElementById("chart-data").textContent = "Invalid data structure received.";
