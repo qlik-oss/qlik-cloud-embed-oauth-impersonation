@@ -327,6 +327,7 @@
       async function updateTable() {
         try {
           const response = await getHypercube();
+          console.log("Hypercube response:", response);
 
           // Since the response doesn't have a status property, we need to check if it's valid
           if (!response || response.error) {
@@ -335,9 +336,9 @@
             return;
           }
 
-          if (!hypercube.ProductTypes || !hypercube.SalesAmount) {
+          if (!response.ProductTypes || !response.SalesAmount) {
             document.getElementById("chart-data").textContent = "Invalid data structure received.";
-            console.error("Hypercube missing expected properties:", hypercube);
+            console.error("Hypercube missing expected properties:", response);
             return;
           }
 
@@ -347,7 +348,7 @@
           let table = document.createElement("table");
           table.classList.add("table", "table-striped", "table-bordered");
           
-          let cols = Object.keys(hypercube);
+          let cols = Object.keys(response);
           let thead = document.createElement("thead");
           let tr = document.createElement("tr");
           
@@ -365,7 +366,7 @@
           let tbody = document.createElement("tbody");
           
           // Determine the number of rows based on the ProductTypes array length
-          const rowCount = hypercube.ProductTypes.length;
+          const rowCount = response.ProductTypes.length;
           
           // Loop through the data arrays
           for (let i = 0; i < rowCount; i++) {
@@ -374,12 +375,12 @@
             
             // Add Product Type cell
             const productTypeCell = document.createElement('td');
-            productTypeCell.textContent = hypercube.ProductTypes[i];
+            productTypeCell.textContent = response.ProductTypes[i];
             row.appendChild(productTypeCell);
             
             // Add Sales Amount cell
             const salesAmountCell = document.createElement('td');
-            salesAmountCell.textContent = hypercube.SalesAmount[i];
+            salesAmountCell.textContent = response.SalesAmount[i];
             row.appendChild(salesAmountCell);
             
             tbody.appendChild(row);
