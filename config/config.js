@@ -29,6 +29,8 @@ const getBackendConfig = async function (email) {
     secret: process.env.SESSION_SECRET,
     port: process.env.PORT,
     userPrefix: process.env.USER_PREFIX,
+    hypercubeDimension: process.env.HYPERCUBE_DIMENSION,
+    hypercubeMeasure: process.env.HYPERCUBE_MEASURE,
   };
 
   // Build qlik/api backend config

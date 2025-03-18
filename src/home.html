@@ -222,8 +222,7 @@
 
               <div id="classic-app" class="container content-item" style="display: none;">
                 <h1>
-                  qlik-embed classic/app embeds the full Qlik Sense client in the
-                  page
+                  Full Qlik Sense (classic/app)
                 </h1>
                 <div class="classic-app">
                   <qlik-embed ui="classic/app" app-id="" sheet-id=""></qlik-embed>
@@ -231,33 +230,33 @@
               </div>
 
               <div id="analytics-chart" class="container content-item" style="display: none;">
-                <h1>qlik-embed analytics/chart embeds a chart in the page</h1>
+                <h1>Lightweight chart (analytics/chart)</h1>
                 <div class="viz">
                   <qlik-embed id="visualization" ui="analytics/chart" app-id="" object-id=""></qlik-embed>
                 </div>
               </div>
 
               <div id="ai-assistant" class="container content-item" style="display: none;">
-                <h1>qlik-embed ai/assistant embeds an assistant from Qlik Answers</h1>
+                <h1>AI Assistant (ai/assistant)</h1>
                 <div class="ai">
                   <qlik-embed id="visualization" ui="ai/assistant" assistant-id=""></qlik-embed>
                 </div>
               </div>
 
               <div id="on-the-fly" class="container content-item" style="display: none;">
-                <h1>Generate charts on-the-fly with analytics/chart</h1>
+                <h1>On-the-fly charts (analytics/chart)</h1>
                 <div class="viz">
                   <qlik-embed id="visualization" ui="analytics/chart" app-id="" object-id=""></qlik-embed>
                 </div>
               </div>
 
               <div id="analytics-chart-data" class="container content-item" style="display: none;">
-                <h1>Direct access to analytics application data via qlik-api backend</h1>
+                <h1>Direct access to data (qlik-api)</h1>
                 <div id="chart-data" class="table"></div>
               </div>
 
               <div id="field" class="container content-item" style="display: none;">
-                <h1>qlik-embed field embeds a list box in the page</h1>
+                <h1>Filterable field (analytics/field)</h1>
                 <div class="viz">
                   <qlik-embed ui="analytics/field" app-id="" field-id=""></qlik-embed>
                 </div>
@@ -265,7 +264,7 @@
 
               <div id="sheet-nav" class="container content-item" style="display: none;">
                 <h1>
-                  qlik-embed analytics/sheet with custom sheet navigation
+                  Lightweight sheet (analytics/sheet with sheet navigation)
                 </h1>
                 <select id="sheetdrop" name="SheetList" class="sheet-drop"></select>
                 <div class="selections-bar">
@@ -278,7 +277,7 @@
               </div>
 
               <div id="classic-chart" class="container content-item" style="display: none;">
-                <h1>Load legacy charts and extensions with classic/chart</h1>
+                <h1>Legacy charts (classic/chart)</h1>
                 <div class="classic-app">
                   <qlik-embed id="classicChartObject" ui="classic/chart" app-id="" object-id=""></qlik-embed>
                 </div>
@@ -340,7 +339,7 @@
             return;
           }
 
-          if (!response.ProductTypes || !response.SalesAmount) {
+          if (!response.returnedDimension || !response.returnedMeasure) {
             document.getElementById("chart-data").textContent = "Invalid data structure received.";
             console.error("Hypercube missing expected properties:", response);
             return;
@@ -369,8 +368,8 @@
           // Create table body
           let tbody = document.createElement("tbody");
           
-          // Determine the number of rows based on the ProductTypes array length
-          const rowCount = response.ProductTypes.length;
+          // Determine the number of rows based on the returnedDimension array length
+          const rowCount = response.returnedDimension.length;
           
           // Loop through the data arrays
           for (let i = 0; i < rowCount; i++) {
@@ -379,13 +378,13 @@
             
             // Add Product Type cell
             const productTypeCell = document.createElement('td');
-            productTypeCell.textContent = response.ProductTypes[i];
+            productTypeCell.textContent = response.returnedDimension[i];
             row.appendChild(productTypeCell);
             
             // Add Sales Amount cell
-            const salesAmountCell = document.createElement('td');
-            salesAmountCell.textContent = response.SalesAmount[i];
-            row.appendChild(salesAmountCell);
+            const returnedMeasureCell = document.createElement('td');
+            returnedMeasureCell.textContent = response.returnedMeasure[i];
+            row.appendChild(returnedMeasureCell);
             
             tbody.appendChild(row);
           }

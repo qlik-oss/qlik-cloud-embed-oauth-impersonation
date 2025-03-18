@@ -160,10 +160,10 @@ app.get("/hypercube", requireAuth, async (req, res) => {
       },
       qHyperCubeDef: {
         qDimensions: [
-          { qDef: { qFieldDefs: ["Product Type"] } },
+          { qDef: { qFieldDefs: [appSettings.hypercubeDimension] } },
         ],
         qMeasures: [
-          { qDef: { qDef: "=Sum([Sales Amount])" } },
+          { qDef: { qDef: appSettings.hypercubeMeasure } },
         ],
         qInitialDataFetch: [
           { qHeight: 10, qWidth: 2 },
@@ -194,12 +194,12 @@ app.get("/hypercube", requireAuth, async (req, res) => {
     }
 
     // Transform data for front-end consumption
-    const productTypes = data.map(row => row[0].qText);
-    const salesAmount = data.map(row => row[1].qText);
+    const returnedDimension = data.map(row => row[0].qText);
+    const returnedMeasure = data.map(row => row[1].qText);
 
     res.json({
-      ProductTypes: productTypes,
-      SalesAmount: salesAmount
+      returnedDimension: returnedDimension,
+      returnedMeasure: returnedMeasure
     });
   } catch (err) {
     console.error("Hypercube error:", err);
@@ -207,13 +207,13 @@ app.get("/hypercube", requireAuth, async (req, res) => {
   }
 });
 
-// Page routes
+// Login route - needs ratelimit protection if production
 app.get("/login", csrfProtection, (req, res) => {
   // Add CSRF token to login page
   res.sendFile(path.join(__dirname, "/src/login.html"));
 });
 
-// Add a route to get CSRF token for AJAX requests
+// CSRF route
 app.get("/csrf-token", csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
