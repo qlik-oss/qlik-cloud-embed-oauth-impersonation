@@ -29,6 +29,7 @@ app.use(
     secret: appSettings.secret,
     resave: false,
     saveUninitialized: true,
+    maxAge: 3600000
   })
 );
 
