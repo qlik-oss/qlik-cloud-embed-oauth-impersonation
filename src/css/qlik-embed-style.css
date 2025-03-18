@@ -8,6 +8,16 @@
   position:relative;
 }
 
+.viz-selector {
+  width: 250px;
+  padding: 16px;
+}
+
+.app-selector {
+  width: 100%;
+  padding: 16px;
+}
+
 .ai {
   width: 100%;
   height: 600px;

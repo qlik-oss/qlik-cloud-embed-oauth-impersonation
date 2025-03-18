@@ -153,7 +153,7 @@
                       </div>
                     </div>
                     <div class="col-sm-2">
-                      <a class="nav-link" href="#analytics-chart">
+                      <a class="nav-link" href="#on-the-fly">
                         <span class="link"></span>
                       </a>
                       <div class="card border-primary">
@@ -245,8 +245,23 @@
 
               <div id="on-the-fly" class="container content-item" style="display: none;">
                 <h1>On-the-fly charts (analytics/chart)</h1>
+                <div class="viz-selector">
+                  <label for="chartType">Select Chart Type:</label>
+                  <select id="chartType" class="form-select" aria-label="Chart type selection">
+                    <option value="barchart" selected>Bar chart</option>
+                    <option value="piechart">Pie chart</option>
+                    <option value="linechart">Line chart</option>
+                  </select>
+                </div>
+                <script>
+                  document.getElementById('chartType').addEventListener('change', function () {
+                    const visualization = document.querySelector('#on-the-fly qlik-embed');
+                    visualization.setAttribute('type', this.value);
+                  });
+                </script>
                 <div class="viz">
-                  <qlik-embed id="visualization" ui="analytics/chart" app-id="" object-id=""></qlik-embed>
+                  <qlik-embed id="visualization" ui="analytics/chart" app-id="" type="barchart" dimensions=""
+                    measures=""></qlik-embed>
                 </div>
               </div>
 
@@ -266,7 +281,10 @@
                 <h1>
                   Lightweight sheet (analytics/sheet with sheet navigation)
                 </h1>
-                <select id="sheetdrop" name="SheetList" class="sheet-drop"></select>
+                <div class="app-selector">
+                  <label for="sheetdrop">Select Sheet:</label>
+                  <select id="sheetdrop" name="SheetList" class="form-select"></select>
+                </div>
                 <div class="selections-bar">
                   <qlik-embed ui="analytics/selections" app-id="">
                   </qlik-embed>
@@ -282,14 +300,16 @@
                   <qlik-embed id="classicChartObject" ui="classic/chart" app-id="" object-id=""></qlik-embed>
                 </div>
               </div>
-              
+
             </div>
           </div>
         </main>
         <footer class="py-4 bg-light mt-auto">
           <div class="container-fluid px-4">
             <div class="d-flex align-items-center justify-content-between small">
-                <div class="text-muted">Copyright &copy; My Company <script>document.write(new Date().getFullYear())</script></div>
+              <div class="text-muted">Copyright &copy; My Company
+                <script>document.write(new Date().getFullYear())</script>
+              </div>
               <div>
                 <a href="#">Privacy Policy</a>
                 &middot;
@@ -330,7 +350,6 @@
       async function updateTable() {
         try {
           const response = await getHypercube();
-          console.log("Hypercube response:", response);
 
           // Since the response doesn't have a status property, we need to check if it's valid
           if (!response || response.error) {
@@ -347,51 +366,51 @@
 
           let container = document.getElementById("chart-data");
           container.innerHTML = ''; // Clear previous content
-          
+
           let table = document.createElement("table");
           table.classList.add("table", "table-striped", "table-bordered");
-          
+
           let cols = Object.keys(response);
           let thead = document.createElement("thead");
           let tr = document.createElement("tr");
-          
+
           cols.forEach((item) => {
             let th = document.createElement("th");
             th.textContent = item;
             th.scope = "col";
             tr.appendChild(th);
           });
-          
+
           thead.appendChild(tr);
           table.appendChild(thead);
 
           // Create table body
           let tbody = document.createElement("tbody");
-          
+
           // Determine the number of rows based on the returnedDimension array length
           const rowCount = response.returnedDimension.length;
-          
+
           // Loop through the data arrays
           for (let i = 0; i < rowCount; i++) {
             // Create table row
             const row = document.createElement('tr');
-            
+
             // Add Product Type cell
             const productTypeCell = document.createElement('td');
             productTypeCell.textContent = response.returnedDimension[i];
             row.appendChild(productTypeCell);
-            
+
             // Add Sales Amount cell
             const returnedMeasureCell = document.createElement('td');
             returnedMeasureCell.textContent = response.returnedMeasure[i];
             row.appendChild(returnedMeasureCell);
-            
+
             tbody.appendChild(row);
           }
-          
+
           table.appendChild(tbody);
           container.appendChild(table);
-          
+
           // Add a style for the table
           const style = document.createElement('style');
           style.textContent = `
@@ -408,7 +427,7 @@
             }
           `;
           container.appendChild(style);
-          
+
         } catch (error) {
           console.error("Error updating table:", error);
           document.getElementById("chart-data").textContent = "Error processing data: " + error.message;
@@ -417,46 +436,45 @@
 
       // Function for 'Analytics Chart' to populate the element 'sheet-change' with
       // a sheet list returned via qlik/api (getSheets() is in script.js)
-      async function updateSheetsList() {
-          const sheetList = await getSheets();
-          const element_ = document.getElementById("sheet-change");
+      async function updateSheetsList(configParams) {
+        const sheetList = await getSheets();
+        const element_ = document.getElementById("sheet-change");
 
-          let dd = document.getElementById("sheetdrop");
-          dd.length = 0;
-          let defaultOption = document.createElement("option");
-          defaultOption.text = "Select a sheet to navigate to";
-          dd.add(defaultOption);
-          dd.selectedIndex = 0;
+        let dd = document.getElementById("sheetdrop");
+        dd.length = 0;
 
-          let option;
-          for (let i = 0; i < sheetList.length; i++) {
-            option = document.createElement("option");
-            option.text = sheetList[i].qMeta.title;
-            option.value = sheetList[i].qMeta.id;
-            dd.add(option);
+        let option;
+        let selectedIndex = 0;
+        for (let i = 0; i < sheetList.length; i++) {
+          option = document.createElement("option");
+          option.text = sheetList[i].qMeta.title;
+          option.value = sheetList[i].qMeta.id;
+          dd.add(option);
+          if (sheetList[i].qMeta.id === configParams.sheetId) {
+            selectedIndex = i;
           }
-
-          dd.addEventListener("change", function () {
-            if (dd.selectedIndex > 0) {
-              let selOption = dd.options[dd.selectedIndex];
-              element_.setAttribute("object-id", selOption.value);
-            }
-          });
         }
+        dd.selectedIndex = selectedIndex;
 
-        // Function to set Qlik-embed head script
-        async function updateHeaders(configParams) {
+        dd.addEventListener("change", function () {
+          let selOption = dd.options[dd.selectedIndex];
+          element_.setAttribute("object-id", selOption.value);
+        });
+      }
 
-          var qlik_embed_script = document.createElement('script');
-          qlik_embed_script.setAttribute('crossorigin', 'anonymous');
-          qlik_embed_script.setAttribute('type', 'application/javascript');
-          qlik_embed_script.setAttribute('src', 'https://cdn.jsdelivr.net/npm/@qlik/embed-web-components@1/dist/index.min.js');
-          qlik_embed_script.setAttribute('data-host', configParams.tenantUri);
-          qlik_embed_script.setAttribute('data-client-id', configParams.oAuthFrontEndClientId);
-          qlik_embed_script.setAttribute('data-get-access-token', 'getAccessToken');
-          qlik_embed_script.setAttribute('data-auth-type', 'OAuth2');
-          await document.head.appendChild(qlik_embed_script);
-        }
+      // Function to set Qlik-embed head script
+      async function updateHeaders(configParams) {
+
+        var qlik_embed_script = document.createElement('script');
+        qlik_embed_script.setAttribute('crossorigin', 'anonymous');
+        qlik_embed_script.setAttribute('type', 'application/javascript');
+        qlik_embed_script.setAttribute('src', 'https://cdn.jsdelivr.net/npm/@qlik/embed-web-components@1/dist/index.min.js');
+        qlik_embed_script.setAttribute('data-host', configParams.tenantUri);
+        qlik_embed_script.setAttribute('data-client-id', configParams.oAuthFrontEndClientId);
+        qlik_embed_script.setAttribute('data-get-access-token', 'getAccessToken');
+        qlik_embed_script.setAttribute('data-auth-type', 'OAuth2');
+        await document.head.appendChild(qlik_embed_script);
+      }
 
       // Function to update template qlik-embed tags with the source appId
       async function updateQlikEmbedTags(configParams) {
@@ -466,10 +484,6 @@
             case 'analytics/sheet':
               qeObjects[i].setAttribute('app-id', configParams.appId);
               qeObjects[i].setAttribute('object-id', configParams.sheetId);
-              break;
-            case 'analytics/chart':
-              qeObjects[i].setAttribute('app-id', configParams.appId);
-              qeObjects[i].setAttribute('object-id', configParams.objectId);
               break;
             case 'analytics/field':
               qeObjects[i].setAttribute('app-id', configParams.appId);
@@ -486,24 +500,34 @@
               qeObjects[i].setAttribute('app-id', configParams.appId);
               qeObjects[i].setAttribute('object-id', configParams.objectId);
               break;
+            case 'analytics/chart':
+              qeObjects[i].setAttribute('app-id', configParams.appId);
+              // Check if this is in the on-the-fly section
+              if (qeObjects[i].parentNode.parentNode.id === 'on-the-fly') {
+                qeObjects[i].setAttribute('dimensions', "[\"[" + configParams.masterDimension + "]\"]");
+                qeObjects[i].setAttribute('measures', "[\"[" + configParams.masterMeasure + "]\"]");
+              } else {
+                qeObjects[i].setAttribute('object-id', configParams.objectId);
+              }
+              break;
             case 'ai/assistant':
               qeObjects[i].setAttribute('assistant-id', configParams.assistantId);
               break;
           }
         }
 
-        }
+      }
 
-        // On load async function to load all page content in dependency order
-        document.addEventListener("DOMContentLoaded", async () => {
-          // Retrieve config parameters from backend server
-          var configParams = JSON.parse(await getConfigParameter());
-          await updateQlikEmbedTags(configParams);
-          await updateHeaders(configParams);
-          await addEventListeners()
-          await updateSheetsList();
-          await updateTable();
-        });
+      // On load async function to load all page content in dependency order
+      document.addEventListener("DOMContentLoaded", async () => {
+        // Retrieve config parameters from backend server
+        var configParams = JSON.parse(await getConfigParameter());
+        await updateQlikEmbedTags(configParams);
+        await updateHeaders(configParams);
+        await addEventListeners()
+        await updateSheetsList(configParams);
+        await updateTable();
+      });
 
 
     </script>
