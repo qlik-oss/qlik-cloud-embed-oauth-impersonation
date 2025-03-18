@@ -248,10 +248,7 @@
               </div>
 
               <div id="analytics-chart-data" class="container content-item" style="display: none;">
-                <h1>Direct access to analytics application data via existing qlik-embed object.</h1>
-                <h3>
-                  <code>let chartData = objLayout.qHyperCube.qDataPages[0].qMatrix;</code>
-                </h3>
+                <h1>Direct access to analytics application data via qlik-api backend.</h1>
                 <div id="chart-data" class="table"></div>
               </div>
 
@@ -328,88 +325,134 @@
       // in dom element 'chart-data' with the retrieved dimensions and measures from
       // the hypercube in element 'visualization'
       async function updateTable() {
+        try {
+          const response = await getHypercube();
 
-        const hypercube = await getHypercube();
+          // Since the response doesn't have a status property, we need to check if it's valid
+          if (!response || response.error) {
+            document.getElementById("chart-data").textContent = "Error retrieving data.";
+            console.error("Failed to retrieve hypercube data.", response?.message || "");
+            return;
+          }
 
-        //Get the data from the visualization in the page
-        const element = document.getElementById("visualization");
+          if (!hypercube.ProductTypes || !hypercube.SalesAmount) {
+            document.getElementById("chart-data").textContent = "Invalid data structure received.";
+            console.error("Hypercube missing expected properties:", hypercube);
+            return;
+          }
 
-        let container = document.getElementById("chart-data");
-        let table = document.createElement("table");
-        let cols = Object.keys(hypercube);
-        let thead = document.createElement("thead");
-        let tr = document.createElement("tr");
-        cols.forEach((item) => {
-          let th = document.createElement("th");
-          th.textContent = item;
-          tr.appendChild(th);
-        });
-        thead.appendChild(tr);
-        table.appendChild(thead);
+          let container = document.getElementById("chart-data");
+          container.innerHTML = ''; // Clear previous content
+          
+          let table = document.createElement("table");
+          table.classList.add("table", "table-striped", "table-bordered");
+          
+          let cols = Object.keys(hypercube);
+          let thead = document.createElement("thead");
+          let tr = document.createElement("tr");
+          
+          cols.forEach((item) => {
+            let th = document.createElement("th");
+            th.textContent = item;
+            th.scope = "col";
+            tr.appendChild(th);
+          });
+          
+          thead.appendChild(tr);
+          table.appendChild(thead);
 
-        // Loop through the data arrays
-        for (let i = 0; i < hypercube["ProducTypes"].length; i++) {
-          // Create table row
-          const row = document.createElement('tr');
-
-          // Create table data cell for ProductTypes
-          const productTypeCell = document.createElement('td');
-          productTypeCell.textContent = hypercube["ProducTypes"][i];
-          row.appendChild(productTypeCell);
-
-          // Create table data cell for SalesAmount
-          const salesAmountCell = document.createElement('td');
-          salesAmountCell.textContent = hypercube["SalesAmount"][i];
-          row.appendChild(salesAmountCell);
-
-          // Append row to table
-          table.appendChild(row);
+          // Create table body
+          let tbody = document.createElement("tbody");
+          
+          // Determine the number of rows based on the ProductTypes array length
+          const rowCount = hypercube.ProductTypes.length;
+          
+          // Loop through the data arrays
+          for (let i = 0; i < rowCount; i++) {
+            // Create table row
+            const row = document.createElement('tr');
+            
+            // Add Product Type cell
+            const productTypeCell = document.createElement('td');
+            productTypeCell.textContent = hypercube.ProductTypes[i];
+            row.appendChild(productTypeCell);
+            
+            // Add Sales Amount cell
+            const salesAmountCell = document.createElement('td');
+            salesAmountCell.textContent = hypercube.SalesAmount[i];
+            row.appendChild(salesAmountCell);
+            
+            tbody.appendChild(row);
+          }
+          
+          table.appendChild(tbody);
+          container.appendChild(table);
+          
+          // Add a style for the table
+          const style = document.createElement('style');
+          style.textContent = `
+            #chart-data table {
+              width: 100%;
+              margin-top: 20px;
+            }
+            #chart-data th, #chart-data td {
+              padding: 8px;
+              text-align: left;
+            }
+            #chart-data th {
+              background-color: #f2f2f2;
+            }
+          `;
+          container.appendChild(style);
+          
+        } catch (error) {
+          console.error("Error updating table:", error);
+          document.getElementById("chart-data").textContent = "Error processing data: " + error.message;
         }
-        container.appendChild(table);
       }
 
       // Function for 'Analytics Chart' to populate the element 'sheet-change' with
       // a sheet list returned via qlik/api (getSheets() is in script.js)
       async function updateSheetsList() {
-        const sheetList = await getSheets();
-        const element_ = document.getElementById("sheet-change");
+          const sheetList = await getSheets();
+          const element_ = document.getElementById("sheet-change");
 
-        let dd = document.getElementById("sheetdrop");
-        dd.length = 0;
-        let defaultOption = document.createElement("option");
-        defaultOption.text = "Select a sheet to navigate to";
-        dd.add(defaultOption);
-        dd.selectedIndex = 0;
+          let dd = document.getElementById("sheetdrop");
+          dd.length = 0;
+          let defaultOption = document.createElement("option");
+          defaultOption.text = "Select a sheet to navigate to";
+          dd.add(defaultOption);
+          dd.selectedIndex = 0;
 
-        let option;
-        for (let i = 0; i < sheetList.length; i++) {
-          option = document.createElement("option");
-          option.text = sheetList[i].qMeta.title;
-          option.value = sheetList[i].qMeta.id;
-          dd.add(option);
+          let option;
+          for (let i = 0; i < sheetList.length; i++) {
+            option = document.createElement("option");
+            option.text = sheetList[i].qMeta.title;
+            option.value = sheetList[i].qMeta.id;
+            dd.add(option);
+          }
+
+          dd.addEventListener("change", function () {
+            if (dd.selectedIndex > 0) {
+              let selOption = dd.options[dd.selectedIndex];
+              element_.setAttribute("object-id", selOption.value);
+            }
+          });
         }
 
-        dd.addEventListener("change", function () {
-          if (dd.selectedIndex > 0) {
-            let selOption = dd.options[dd.selectedIndex];
-            element_.setAttribute("object-id", selOption.value);
-          }
-        });
-      }
+        // Function to set Qlik-embed head script
+        async function updateHeaders(configParams) {
 
-      // Function to set Qlik-embed head script
-      async function updateHeaders(configParams) {
-
-        var qlik_embed_script = document.createElement('script');
-        qlik_embed_script.setAttribute('crossorigin', 'anonymous');
-        qlik_embed_script.setAttribute('type', 'application/javascript');
-        qlik_embed_script.setAttribute('src', 'https://cdn.jsdelivr.net/npm/@qlik/embed-web-components@1/dist/index.min.js');
-        qlik_embed_script.setAttribute('data-host', configParams.tenantUri);
-        qlik_embed_script.setAttribute('data-client-id', configParams.oAuthFrontEndClientId);
-        qlik_embed_script.setAttribute('data-get-access-token', 'getAccessToken');
-        qlik_embed_script.setAttribute('data-auth-type', 'OAuth2');
-        await document.head.appendChild(qlik_embed_script);
-      }
+          var qlik_embed_script = document.createElement('script');
+          qlik_embed_script.setAttribute('crossorigin', 'anonymous');
+          qlik_embed_script.setAttribute('type', 'application/javascript');
+          qlik_embed_script.setAttribute('src', 'https://cdn.jsdelivr.net/npm/@qlik/embed-web-components@1/dist/index.min.js');
+          qlik_embed_script.setAttribute('data-host', configParams.tenantUri);
+          qlik_embed_script.setAttribute('data-client-id', configParams.oAuthFrontEndClientId);
+          qlik_embed_script.setAttribute('data-get-access-token', 'getAccessToken');
+          qlik_embed_script.setAttribute('data-auth-type', 'OAuth2');
+          await document.head.appendChild(qlik_embed_script);
+        }
 
       // Function to update template qlik-embed tags with the source appId
       async function updateQlikEmbedTags(configParams) {
@@ -445,18 +488,18 @@
           }
         }
 
-      }
+        }
 
-      // On load async function to load all page content in dependency order
-      document.addEventListener("DOMContentLoaded", async () => {
-        // Retrieve config parameters from backend server
-        var configParams = JSON.parse(await getConfigParameter());
-        await updateQlikEmbedTags(configParams);
-        await updateHeaders(configParams);
-        await addEventListeners()
-        await updateSheetsList();
-        await updateTable();
-      });
+        // On load async function to load all page content in dependency order
+        document.addEventListener("DOMContentLoaded", async () => {
+          // Retrieve config parameters from backend server
+          var configParams = JSON.parse(await getConfigParameter());
+          await updateQlikEmbedTags(configParams);
+          await updateHeaders(configParams);
+          await addEventListeners()
+          await updateSheetsList();
+          await updateTable();
+        });
 
 
     </script>
