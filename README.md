@@ -1,5 +1,5 @@
 
-# Embed Qlik Sense using qlik-embed and emulated SSO (Single Sign On) via OAuth impersonation
+# Embed Qlik Sense & Qlik Answers using qlik-embed and emulated SSO (Single Sign On) via OAuth impersonation
 
 > [!IMPORTANT]
 > This project is not production ready. It is structured for learning and evaluation of the qlik-embed project with a
@@ -13,7 +13,7 @@ use HTTPS rather than HTTP for your project.
 
 ## Introduction
 
-The goal of this project is to show how to easily deploy analytics into your solution with a seamless login
+The goal of this project is to show how to easily deploy analytics & AI into your solution with a seamless login
 experience for your users, even when your web app or portal doesn't have a backend identity provider for users to authenticate to directly. This project leverages Qlik's qlik-embed, qlik/api, and OAuth machine-to-machine impersonation
 capabilities.
 
