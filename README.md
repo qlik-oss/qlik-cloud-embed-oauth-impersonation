@@ -60,7 +60,7 @@ Alternatively, you can download and extract the project files.
 1. Select **Download ZIP**.
 1. Extract the content of the ZIP file in the folder of your choice.
 
-## Step 2. Upload the demo Qlik Sense app
+## Step 2a. Upload the demo Qlik Sense app
 
 1. Upload the [demo Qlik Sense app](./qlik_app/Consumer%20Sales.qvf) to your tenant.
 1. Open the app and copy the ID (it will be a GUID similar to `946d5af4-e089-42d3-9ba7-1d21adb68472`).
@@ -68,6 +68,15 @@ Alternatively, you can download and extract the project files.
 1. Move the app into a new `shared` space.
 1. Edit the space configuration to provide `Can view` access to anyone in the tenant.
     > In a production deployment, you would verify that the logged-in user has access to the app.
+
+## Step 2b. (Optional) Create a Qlik Answers Assistant
+
+1. Follow the [Qlik Answers help documentation](https://help.qlik.com/en-US/cloud-services/Subsystems/Hub/Content/Sense_Hub/QlikAnswers/Qlik-Answers.htm)
+   to set up a new Knowledgebase and Assistant, and index the knowledgebase data
+   ready for users to ask questions.
+2. Provide `View` and `Can consume data` roles to all users in the tenant for the
+   spaces containing the knowledgebase, assistant, and any data connections used
+   by the knowledgebase.
 
 ## Step 3. Set up environment variables
 
