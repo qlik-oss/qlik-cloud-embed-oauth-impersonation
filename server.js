@@ -1,6 +1,10 @@
+import dotenv from "dotenv";
+
+// Load environment variables from .env.dev file
+dotenv.config({ path: '.env.dev' });
+
 import express from "express";
 import session from "express-session";
-import bodyParser from "body-parser";
 import path from "path";
 import {
   auth as qlikAuth,
@@ -9,261 +13,267 @@ import {
 } from "@qlik/api";
 import { fileURLToPath } from "url";
 import { getFrontendConfig, getBackendConfig } from "./config/config.js";
+import csrf from "csurf"; // Add CSRF protection
+import cookieParser from "cookie-parser"; // Required for CSRF
 
 // Load config
-const { appSettings, configBackend, configFrontend }  = await getBackendConfig();
-const { myParamsConfig }  = await getFrontendConfig();
+const { appSettings, configBackend, configFrontend } = await getBackendConfig();
+const { myParamsConfig } = await getFrontendConfig();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-var app = express();
+const app = express();
 app.use(express.static("src"));
 const PORT = appSettings.port || 3000;
 
+// Set default auth config
 qlikAuth.setDefaultHostConfig(configFrontend);
 
+// Configure cookie parser middleware (required for csrf)
+app.use(cookieParser());
 
-
-// Configure session middleware using environment variable for session secret
+// Configure session middleware with secure settings
 app.use(
   session({
     secret: appSettings.secret,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
+    cookie: { 
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true, // Prevent client-side JS from reading the cookie
+      maxAge: 3600000, // 1 hour
+      sameSite: 'strict' // Protect against CSRF
+    }
   })
 );
 
-// Configure body parser middleware
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+// Use express built-in parsers
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-// Get Qlik user (via qlik/api: https://github.com/qlik-oss/qlik-api-ts/blob/main/users.js)
-async function getQlikUser(userEmail) {
-  const { data: user } = await qlikUsers.getUsers(
-    {
-      filter: `email eq "${userEmail}"`,
+// Setup CSRF protection (use session rather than cookie)
+const csrfProtection = csrf({ cookie: false });
+
+// Create a reusable function for Qlik app sessions
+async function getQlikAppSession(userId) {
+  return openAppSession.openAppSession({
+    appId: myParamsConfig.appId,
+    hostConfig: {
+      ...configFrontend,
+      userId,
+      scope: "user_default",
     },
-    {
-      hostConfig: {
-        ...configBackend,
-        scope: "user_default",
-      },
-    }
-  );
-  return user;
+    withoutData: false,
+  });
 }
 
-// Set up a route to serve the login form
-app.get("/login", (req, res) => {
-  res.sendFile(__dirname + "/src/login.html");
-});
+// Get Qlik user (via qlik/api)
+async function getQlikUser(userEmail) {
+  try {
+    const { data: user } = await qlikUsers.getUsers(
+      {
+        filter: `email eq "${userEmail}"`,
+      },
+      {
+        hostConfig: {
+          ...configBackend,
+          scope: "user_default",
+        },
+      }
+    );
+    return user;
+  } catch (error) {
+    console.error("Error getting user:", error);
+    throw error;
+  }
+}
 
-// Handle form submission of login.html
-app.post("/login", (req, res) => {
+// Authentication middleware
+function requireAuth(req, res, next) {
+  if (!req.session.userId) {
+    return res.redirect("/login");
+  }
+  next();
+}
+
+// Apply CSRF protection to routes that change state
+app.post("/login", csrfProtection, async (req, res) => {
   const { email } = req.body;
-  if (email) {
-    // Save email to session
+  if (!email) {
+    return res.status(400).send("Please provide an email");
+  }
+  
+  try {
     req.session.email = email;
     console.log("Logging in user:", email);
     res.redirect("/");
-  } else {
-    res.send("Please provide an email.");
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).send("Login failed");
   }
 });
 
-// Get access token (M2M impersonation) for use in front-end by qlik-embed using qlik/api
-app.post("/access-token", async (req, res) => {
-  const userId = req.session.userId;
-  if (userId != undefined && userId.length > 0) {
-    try {
-      const accessToken = await qlikAuth.getAccessToken({
-        hostConfig: {
-          ...configFrontend,
-          userId,
-          scope: "user_default",
-        },
-      });
-      console.log("Retrieved access token for: ", userId);
-      res.send(accessToken);
-    } catch (err) {
-      console.log(err);
-      res.status(401).send("No access");
-    }
+// API routes that need CSRF protection
+app.post("/access-token", [requireAuth, csrfProtection], async (req, res) => {
+  try {
+    const accessToken = await qlikAuth.getAccessToken({
+      hostConfig: {
+        ...configFrontend,
+        userId: req.session.userId,
+        scope: "user_default",
+      },
+    });
+    console.log("Retrieved access token for:", req.session.userId);
+    res.send(accessToken);
+  } catch (err) {
+    console.error("Token error:", err);
+    res.status(401).send("Authentication error");
   }
 });
 
-// Get sheet list using qlik/api
-app.get("/app-sheets", async (req, res) => {
-  const userId = req.session.userId;
-  if (typeof userId !== "undefined" && userId !== null) {
-    try {
-      const appSession = openAppSession.openAppSession({
-        appId: myParamsConfig.appId,
-        hostConfig: {
-          ...configFrontend,
-          userId,
-          scope: "user_default",
-        },
-        withoutData: false,
-      });
-      // get the "qix document (qlik app)"
-      const app = await appSession.getDoc();
-
-      // app is now fully typed including sense-client mixins
-      const sheetList = await app.getSheetList();
-
-      res.send(sheetList);
-    } catch (err) {
-      console.log(err);
-      res.status(401).send("Unable to retrieve sheet definitions.");
-    }
-  } else {
-    res.redirect("/login");
+app.post("/config", [requireAuth, csrfProtection], async (req, res) => {
+  try {
+    const params = await getFrontendConfig(req.session.userId);
+    res.json(params.myParamsConfig);
+  } catch (err) {
+    console.error("Config error:", err);
+    res.status(500).send("Unable to retrieve configuration");
   }
 });
 
-// Get Parameters: userId not needed for the example, but needed in case you want to retrieve per tenant basis parameters
-app.post("/config", async (req, res) => {
-  const userId = req.session.userId;
-  const params = await getFrontendConfig(userId);
-  res.status(200).send(params.myParamsConfig);
+// Read-only API routes don't need CSRF protection
+app.get("/app-sheets", requireAuth, async (req, res) => {
+  try {
+    const appSession = await getQlikAppSession(req.session.userId);
+    const app = await appSession.getDoc();
+    const sheetList = await app.getSheetList();
+    res.json(sheetList);
+  } catch (err) {
+    console.error("Sheet error:", err);
+    res.status(500).send("Unable to retrieve sheet definitions");
+  }
 });
 
-// Set up a route for the Home page
-app.get("/", async (req, res) => {
- 
-  const email = req.session.email;
+app.get("/hypercube", requireAuth, async (req, res) => {
+  try {
+    const appSession = await getQlikAppSession(req.session.userId);
+    const app = await appSession.getDoc();
 
-  (async () => {
-    if (email) {
-      //check to see if a matching user email exists on the tenant
-      const currentUser = await getQlikUser(email);
+    // Hypercube properties
+    const properties = {
+      qInfo: {
+        qType: "my-straight-hypercube",
+      },
+      qHyperCubeDef: {
+        qDimensions: [
+          { qDef: { qFieldDefs: [appSettings.hypercubeDimension] } },
+        ],
+        qMeasures: [
+          { qDef: { qDef: appSettings.hypercubeMeasure } },
+        ],
+        qInitialDataFetch: [
+          { qHeight: 10, qWidth: 2 },
+        ],
+      },
+    };
 
-      // If user doesn't exist, create it (optional)
-      if (currentUser.data.length !== 1) {
-        // We have no user, so create one prefixed with 'oauth_gen_' to avoid collision risk with real users
-        const currentUser = await qlikUsers.createUser(
-          {
-            name: "oauth_gen_" + req.session.email,
-            email: "oauth_gen_" + req.session.email,
-            subject: "oauth_gen_" + req.session.email,
-            status: "active",
-          },
-          {
-            hostConfig: {
-              ...configBackend,
-              scope: "admin_classic user_default",
-            },
-          }
-        );
-        console.log("Created user: ", currentUser);
-        req.session.userId = currentUser.data.id;
-      } else {
-        // We have a user, continue
-        req.session.userId = currentUser.data[0].id;
-      }
-      console.log("Current user ID:", req.session.userId);
-      res.sendFile(__dirname + "/src/home.html");
-    } else {
-      res.redirect("/login");
-    }
-  })();
-});
+    // Extract hypercube data
+    const model = await app.createSessionObject(properties);
+    const layout = await model.getLayout();
+    let data = layout.qHyperCube.qDataPages[0].qMatrix;
 
-// Set up a route for a log out
-app.get("/logout", async (req, res) => {
-  req.session.userId = null;
-  res.redirect("/login");
-});
+    // Get additional pages if needed
+    const columns = layout.qHyperCube.qSize.qcx;
+    const totalHeight = layout.qHyperCube.qSize.qcy;
+    const pageHeight = 5;
+    const numberOfPages = Math.ceil(totalHeight / pageHeight);
 
-// Get hypercube data (hardcoded values for the provided example app)
-app.get("/hypercube", async (req, res) => {
-  const userId = req.session.userId;
-  if (typeof userId !== "undefined" && userId !== null) {
-    try {
-      const appSession = openAppSession.openAppSession({
-        appId: myParamsConfig.appId,
-        hostConfig: {
-          ...configFrontend,
-          userId,
-          scope: "user_default",
-        },
-        withoutData: false,
-      });
-      // get the "qix document (qlik app)"
-      const app = await appSession.getDoc();
-
-      //Hypercube properties
-      const properties = {
-        qInfo: {
-          qType: "my-straight-hypercube",
-        },
-        qHyperCubeDef: {
-          qDimensions: [
-            {
-              qDef: { qFieldDefs: ["Product Type"] },
-            },
-          ],
-          qMeasures: [
-            {
-              qDef: { qDef: "=Sum([Sales Amount])" },
-            },
-          ],
-          qInitialDataFetch: [
-            {
-              qHeight: 10,
-              qWidth: 2,
-            },
-          ],
-        },
+    for (let i = 1; i < numberOfPages; i++) {
+      const page = {
+        qTop: pageHeight * i,
+        qLeft: 0,
+        qWidth: columns,
+        qHeight: pageHeight,
       };
-      //Extract hypercube data
-      const model = await app.createSessionObject(properties);
-      let layout = await model.getLayout();
-      let data = layout.qHyperCube.qDataPages[0].qMatrix;
-
-      const columns = layout.qHyperCube.qSize.qcx;
-      const totalHeight = layout.qHyperCube.qSize.qcy;
-      const pageHeight = 5;
-      const numberOfPages = Math.ceil(totalHeight / pageHeight);
-
-      for (let i = 1; i < numberOfPages; i++) {
-        const page = {
-          qTop: pageHeight * i,
-          qLeft: 0,
-          qWidth: columns,
-          qHeight: pageHeight,
-        };
-        const row = await model.getHyperCubeData("/qHyperCubeDef", [page]);
-        data.push(...row[0].qMatrix);
-      }
-
-      //Put data in each single array for simplicity
-      var productTypes = [];
-      var salesAmount = [];
-
-      for (let y in data) {
-        productTypes.push(data[y][0].qText);
-        salesAmount.push(data[y][1].qText);
-      }
-
-      var hypercubeDict = {};
-      hypercubeDict["ProductTypes"] = productTypes;
-      hypercubeDict["SalesAmount"] = salesAmount;
-
-      res.send(hypercubeDict);
-    } catch (err) {
-      console.log(err);
-      res.status(500).send("Unable to retrieve hypercube.");
+      const row = await model.getHyperCubeData("/qHyperCubeDef", [page]);
+      data.push(...row[0].qMatrix);
     }
-  } else {
-    res.redirect("/login");
+
+    // Transform data for front-end consumption
+    const returnedDimension = data.map(row => row[0].qText);
+    const returnedMeasure = data.map(row => row[1].qText);
+
+    res.json({
+      returnedDimension: returnedDimension,
+      returnedMeasure: returnedMeasure
+    });
+  } catch (err) {
+    console.error("Hypercube error:", err);
+    res.status(500).send("Unable to retrieve hypercube");
   }
 });
 
+// Login route - needs ratelimit protection if production
+app.get("/login", csrfProtection, (req, res) => {
+  // Add CSRF token to login page
+  res.sendFile(path.join(__dirname, "/src/login.html"));
+});
+
+// CSRF route
+app.get("/csrf-token", csrfProtection, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+
+// Root route
+app.get("/", csrfProtection, async (req, res) => {
+  const email = req.session.email;
+  if (!email) {
+    return res.redirect("/login");
+  }
+
+  try {
+    const prefixedEmail = appSettings.userPrefix + email;
+    const currentUser = await getQlikUser(prefixedEmail);
+
+    if (currentUser.data.length !== 1) {
+      // Create user if not found
+      const newUser = await qlikUsers.createUser(
+        {
+          name: prefixedEmail,
+          email: prefixedEmail,
+          subject: prefixedEmail,
+          status: "active",
+        },
+        {
+          hostConfig: {
+            ...configBackend,
+            scope: "admin_classic user_default",
+          },
+        }
+      );
+      
+      req.session.userId = newUser.data.id;
+      console.log("Created user:", newUser.data.id);
+    } else {
+      req.session.userId = currentUser.data[0].id;
+      console.log("Found existing user:", currentUser.data[0].id);
+    }
+    
+    const csrfToken = req.csrfToken();
+    req.session.csrfToken = csrfToken;
+    res.sendFile(path.join(__dirname, "/src/home.html"));
+  } catch (error) {
+    console.error("Error setting up user:", error);
+    res.status(500).send("Error accessing user account");
+  }
+});
+
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/login");
+  });
+});
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(
-    `Server is listening on port ${PORT}! Go to http://localhost:${PORT}`
-  );
+  console.log(`Server running at http://localhost:${PORT}`);
 });
