@@ -97,7 +97,7 @@ Alternatively, you can download and extract the project files.
     - `HYPERCUBE_DIMENSION`: a field to use as a dimension for the hypercube (data) example.
     - `HYPERCUBE_MEASURE`: a measure expression to use as a measure for the hypercube (data) example.
     - `MASTER_DIMENSION`: a master dimension name used for the on-the-fly example.
-    - `MASTER_MEASURE`: a master dimension name used for the on-the-fly example.
+    - `MASTER_MEASURE`: a master measure name used for the on-the-fly example.
 4. (Optional) If you wish to further configure your web app and integration, update:
    - `SESSION_SECRET`: enter a random long string that will be used to sign the session.
    - `PORT`: specify the port the web app will be hosted app when you run it with `npm run dev`.
