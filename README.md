@@ -34,7 +34,7 @@ It showcases several embedding techniques, such as:
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org)
+- [Node.js](https://nodejs.org) version 20 or higher
 - An [OAuth M2M client](https://qlik.dev/authenticate/oauth/create/create-oauth-client/) for the backend calls, configured with:
     - Scopes: `user_default`, `admin_classic`
     - Allowed origins: `http://localhost:3000`
