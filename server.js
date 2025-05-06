@@ -76,7 +76,7 @@ async function getQlikUser(userEmail) {
   try {
     const { data: user } = await qlikUsers.getUsers(
       {
-        filter: `email eq "${userEmail}"`,
+        filter: `email eq "${userEmail}" and status eq "active"`,
       },
       {
         hostConfig: {
