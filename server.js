@@ -25,6 +25,9 @@ const app = express();
 app.use(express.static("src"));
 const PORT = appSettings.port || 3000;
 
+// Trust proxy in production environments
+app.set('trust proxy', 1);
+
 // Set default auth config
 qlikAuth.setDefaultHostConfig(configFrontend);
 
@@ -41,7 +44,7 @@ app.use(
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true, // Prevent client-side JS from reading the cookie
       maxAge: 3600000, // 1 hour
-      sameSite: 'strict' // Protect against CSRF
+      sameSite: 'lax' // Changed from 'strict' to 'lax' for better compatibility with redirects
     }
   })
 );
@@ -50,8 +53,10 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Setup CSRF protection (use session rather than cookie)
-const csrfProtection = csrf({ cookie: false });
+// Setup CSRF protection with simple configuration
+const csrfProtection = csrf({ 
+  cookie: true 
+});
 
 // Create a reusable function for Qlik app sessions
 async function getQlikAppSession(userId) {
@@ -71,7 +76,7 @@ async function getQlikUser(userEmail) {
   try {
     const { data: user } = await qlikUsers.getUsers(
       {
-        filter: `email eq "${userEmail}"`,
+        filter: `email eq "${userEmail}" and status eq "active"`,
       },
       {
         hostConfig: {

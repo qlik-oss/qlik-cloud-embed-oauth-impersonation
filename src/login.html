@@ -65,9 +65,30 @@
   </section>
   
   <script>
+    // Array of funky words for generating random email addresses
+    const funkyWords = [
+      'groove', 'funky', 'disco', 'jam', 'boogie', 'vibe', 'wacky', 'zany', 
+      'radical', 'gnarly', 'awesome', 'bonkers', 'wild', 'cosmic', 'psychedelic', 'far-out',
+      'groovy', 'trippy', 'fresh', 'fly', 'jazzy', 'swanky', 'cool', 'bangin',
+      'savage', 'lit', 'dope', 'epic', 'baller', 'electric', 'twisted', 'crazy'
+    ];
+    
+    // Function to get random word from the array
+    function getRandomWord() {
+      return funkyWords[Math.floor(Math.random() * funkyWords.length)];
+    }
+    
+    // Function to generate random funky email in format funky-word-funky-word-funky-word@test.com
+    function generateRandomEmail() {
+      return `${getRandomWord()}-${getRandomWord()}-${getRandomWord()}@test.com`;
+    }
+
     // Fetch CSRF token when page loads
     document.addEventListener('DOMContentLoaded', async () => {
       try {
+        // Set random email address in the form
+        document.getElementById('email').value = generateRandomEmail();
+        
         const response = await fetch('/csrf-token');
         if (response.ok) {
           const data = await response.json();
