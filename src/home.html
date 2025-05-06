@@ -511,11 +511,35 @@
               }
               break;
             case 'ai/assistant':
+              // Create a placeholder element to show while loading
+              const aiContainer = qeObjects[i].parentNode;
+              const loadingMsg = document.createElement('div');
+              loadingMsg.id = 'ai-assistant-loading';
+              loadingMsg.textContent = 'Loading AI Assistant...';
+              loadingMsg.style.padding = '20px';
+              loadingMsg.style.textAlign = 'center';
+              loadingMsg.style.fontSize = '16px';
+              
+              // Hide the AI assistant element initially
+              qeObjects[i].style.display = 'none';
+              
+              // Add the loading message
+              aiContainer.insertBefore(loadingMsg, qeObjects[i]);
+              
+              // Set attribute but delay rendering for 2 seconds
               qeObjects[i].setAttribute('assistant-id', configParams.assistantId);
+              
+              // After 2 seconds, show the AI assistant and remove loading message
+              setTimeout(() => {
+                const loadingElement = document.getElementById('ai-assistant-loading');
+                if (loadingElement) {
+                  loadingElement.remove();
+                }
+                qeObjects[i].style.display = 'block';
+              }, 2000);
               break;
           }
         }
-
       }
 
       // On load async function to load all page content in dependency order
