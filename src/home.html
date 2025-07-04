@@ -480,39 +480,40 @@
       async function updateQlikEmbedTags(configParams) {
         const qeObjects = document.querySelectorAll('qlik-embed');
         for (var i = 0; i < qeObjects.length; i++) {
-          switch (qeObjects[i].getAttribute('ui')) {
+          const qeObject = qeObjects[i];
+          switch (qeObject.getAttribute('ui')) {
             case 'analytics/sheet':
-              qeObjects[i].setAttribute('app-id', configParams.appId);
-              qeObjects[i].setAttribute('object-id', configParams.sheetId);
+              qeObject.setAttribute('app-id', configParams.appId);
+              qeObject.setAttribute('object-id', configParams.sheetId);
               break;
             case 'analytics/field':
-              qeObjects[i].setAttribute('app-id', configParams.appId);
-              qeObjects[i].setAttribute('field-id', configParams.fieldId);
+              qeObject.setAttribute('app-id', configParams.appId);
+              qeObject.setAttribute('field-id', configParams.fieldId);
               break;
             case 'analytics/selections':
-              qeObjects[i].setAttribute('app-id', configParams.appId);
+              qeObject.setAttribute('app-id', configParams.appId);
               break;
             case 'classic/app':
-              qeObjects[i].setAttribute('app-id', configParams.appId);
-              qeObjects[i].setAttribute('sheet-id', configParams.sheetId);
+              qeObject.setAttribute('app-id', configParams.appId);
+              qeObject.setAttribute('sheet-id', configParams.sheetId);
               break;
             case 'classic/chart':
-              qeObjects[i].setAttribute('app-id', configParams.appId);
-              qeObjects[i].setAttribute('object-id', configParams.objectId);
+              qeObject.setAttribute('app-id', configParams.appId);
+              qeObject.setAttribute('object-id', configParams.objectId);
               break;
             case 'analytics/chart':
-              qeObjects[i].setAttribute('app-id', configParams.appId);
+              qeObject.setAttribute('app-id', configParams.appId);
               // Check if this is in the on-the-fly section
-              if (qeObjects[i].parentNode.parentNode.id === 'on-the-fly') {
-                qeObjects[i].setAttribute('dimensions', "[\"[" + configParams.masterDimension + "]\"]");
-                qeObjects[i].setAttribute('measures', "[\"[" + configParams.masterMeasure + "]\"]");
+              if (qeObject.parentNode.parentNode.id === 'on-the-fly') {
+                qeObject.setAttribute('dimensions', "[\"[" + configParams.masterDimension + "]\"]");
+                qeObject.setAttribute('measures', "[\"[" + configParams.masterMeasure + "]\"]");
               } else {
-                qeObjects[i].setAttribute('object-id', configParams.objectId);
+                qeObject.setAttribute('object-id', configParams.objectId);
               }
               break;
             case 'ai/assistant':
               // Create a placeholder element to show while loading
-              const aiContainer = qeObjects[i].parentNode;
+              const aiContainer = qeObject.parentNode;
               const loadingMsg = document.createElement('div');
               loadingMsg.id = 'ai-assistant-loading';
               loadingMsg.textContent = 'Loading AI Assistant...';
@@ -521,21 +522,23 @@
               loadingMsg.style.fontSize = '16px';
               
               // Hide the AI assistant element initially
-              qeObjects[i].style.display = 'none';
-              
+              qeObject.style.display = 'none';
+
               // Add the loading message
-              aiContainer.insertBefore(loadingMsg, qeObjects[i]);
-              
+              aiContainer.insertBefore(loadingMsg, qeObject);
+
               // Set attribute but delay rendering for 2 seconds
-              qeObjects[i].setAttribute('assistant-id', configParams.assistantId);
-              
+              qeObject.setAttribute('assistant-id', configParams.assistantId);
+
               // After 2 seconds, show the AI assistant and remove loading message
               setTimeout(() => {
                 const loadingElement = document.getElementById('ai-assistant-loading');
                 if (loadingElement) {
                   loadingElement.remove();
                 }
-                qeObjects[i].style.display = 'block';
+                if (qeObject) {
+                  qeObject.style.display = 'block';
+                }
               }, 2000);
               break;
           }
