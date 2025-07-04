@@ -479,8 +479,7 @@
       // Function to update template qlik-embed tags with the source appId
       async function updateQlikEmbedTags(configParams) {
         const qeObjects = document.querySelectorAll('qlik-embed');
-        for (var i = 0; i < qeObjects.length; i++) {
-          const qeObject = qeObjects[i];
+        for (const qeObject of qeObjects) {
           switch (qeObject.getAttribute('ui')) {
             case 'analytics/sheet':
               qeObject.setAttribute('app-id', configParams.appId);
@@ -536,9 +535,7 @@
                 if (loadingElement) {
                   loadingElement.remove();
                 }
-                if (qeObject) {
-                  qeObject.style.display = 'block';
-                }
+                qeObject.style.display = 'block';
               }, 2000);
               break;
           }
