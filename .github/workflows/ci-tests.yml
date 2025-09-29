@@ -25,7 +25,8 @@ jobs:
       
       - name: Download environment file
         run: |
-          echo "${{ secrets.env }}" > .env
+          # Use printf to avoid shell interpretation of special characters
+          printf '%s\n' "${{ secrets.env }}" > .env
           echo "Environment file downloaded from secrets"
       
       - name: Install dependencies
