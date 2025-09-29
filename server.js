@@ -3,6 +3,24 @@ import dotenv from "dotenv";
 // Load environment variables from .env file
 dotenv.config({quiet: true });
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'SESSION_SECRET',
+  'TENANT_URI',
+  'OAUTH_BACKEND_CLIENT_ID',
+  'OAUTH_BACKEND_CLIENT_SECRET',
+  'OAUTH_FRONTEND_CLIENT_ID',
+  'OAUTH_FRONTEND_CLIENT_SECRET',
+  'APP_ID'
+];
+
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+if (missingEnvVars.length > 0) {
+  console.error('Missing required environment variables:', missingEnvVars.join(', '));
+  console.error('Please check your .env file and ensure all required variables are set.');
+  process.exit(1);
+}
+
 import express from "express";
 import session from "express-session";
 import path from "path";
@@ -304,6 +322,9 @@ app.get("/", csrfProtection, async (req, res) => {
     res.sendFile(path.join(__dirname, "/src/home.html"));
   } catch (error) {
     console.error("Error setting up user:", error);
+    // Clear session data on error to prevent inconsistent state
+    req.session.email = null;
+    req.session.userId = null;
     res.status(500).send("Error accessing user account");
   }
 });
