@@ -36,17 +36,7 @@ jobs:
       
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
-      
-      - name: Start application server
-        run: |
-          npm start &
-          echo "Server starting in background"
-          # Wait for server to be ready
-          sleep 10
-          # Verify server is running
-          curl -f http://localhost:3000 || exit 1
-          echo "Server is running on http://localhost:3000"
-      
+
       - name: Run Playwright tests
         run: npx playwright test --reporter=html
         env:
