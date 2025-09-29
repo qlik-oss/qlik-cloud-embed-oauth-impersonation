@@ -80,8 +80,8 @@ Alternatively, you can download and extract the project files.
 
 ## Step 3. Set up environment variables
 
-1. Rename the `template.env` file to `.env.dev`.
-2. Edit the `.env.dev` file with values that match your Qlik Cloud deployment:
+1. Rename the `template.env` file to `.env`.
+2. Edit the `.env` file with values that match your Qlik Cloud deployment:
     - `OAUTH_BACKEND_CLIENT_ID` and `OAUTH_BACKEND_CLIENT_SECRET`: enter the credentials obtained when you created the OAuth M2M client in the Administration activity center.
     - `OAUTH_FRONTEND_CLIENT_ID` and `OAUTH_FRONTEND_CLIENT_SECRET`: enter the credentials obtained when you created the OAuth M2M impersonation client in the Administration activity center.
       > Keep these secrets safe as they provide wide access to your tenant.
@@ -100,7 +100,7 @@ Alternatively, you can download and extract the project files.
     - `MASTER_MEASURE`: a master measure name used for the on-the-fly example.
 4. (Optional) If you wish to further configure your web app and integration, update:
    - `SESSION_SECRET`: enter a random long string that will be used to sign the session.
-   - `PORT`: specify the port the web app will be hosted app when you run it with `npm run dev`.
+   - `PORT`: specify the port the web app will be hosted app when you run it with `npm start`.
    - `USER_PREFIX`: enter the prefix that new users will be created with when logging into the web app.
 
 ## Step 4. Install the dependencies and run the app
@@ -120,7 +120,7 @@ Alternatively, you can download and extract the project files.
 1. Start the development server:
 
    ```shell
-    npm run dev
+    npm start
     ```
 
 1. Open <http://localhost:3000> in your browser.

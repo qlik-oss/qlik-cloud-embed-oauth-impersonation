@@ -2,14 +2,10 @@
  * Config file: This file no longer requires manual updates to values,
  * as they are now managed through environment variables.
  */
-import { config } from "dotenv";
-import path from "path";
+import dotenv from "dotenv";
 
 // Load environment variables from .env file
-const nodeEnv = process.env.NODE_ENV || "";
-config({
-  path: path.resolve(process.cwd(), `.env${nodeEnv ? "." + nodeEnv : ""}`),
-});
+dotenv.config({ quiet: true });
 
 const getBackendConfig = async function (email) {
   /*

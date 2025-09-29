@@ -55,7 +55,7 @@ async function getSheets() {
     }
     const err = new Error("Unexpected error");
     err.status = response.status;
-    err.detail;
+    err.detail = await response.text().catch(() => "No details available");
     throw err;
 }
 
@@ -73,7 +73,7 @@ async function getHypercube() {
   }
   const err = new Error("Unexpected error");
   err.status = response.status;
-  err.detail;
+  err.detail = await response.text().catch(() => "No details available");
   throw err;
 }
 

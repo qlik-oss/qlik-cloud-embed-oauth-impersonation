@@ -1,5 +1,5 @@
-<DOCTYPE html>
-  <html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 
   <head>
     <meta charset="utf-8" />
@@ -364,18 +364,18 @@
             return;
           }
 
-          let container = document.getElementById("chart-data");
+          const container = document.getElementById("chart-data");
           container.innerHTML = ''; // Clear previous content
 
-          let table = document.createElement("table");
+          const table = document.createElement("table");
           table.classList.add("table", "table-striped", "table-bordered");
 
-          let cols = Object.keys(response);
-          let thead = document.createElement("thead");
-          let tr = document.createElement("tr");
+          const cols = Object.keys(response);
+          const thead = document.createElement("thead");
+          const tr = document.createElement("tr");
 
           cols.forEach((item) => {
-            let th = document.createElement("th");
+            const th = document.createElement("th");
             th.textContent = item;
             th.scope = "col";
             tr.appendChild(th);
@@ -385,7 +385,7 @@
           table.appendChild(thead);
 
           // Create table body
-          let tbody = document.createElement("tbody");
+          const tbody = document.createElement("tbody");
 
           // Determine the number of rows based on the returnedDimension array length
           const rowCount = response.returnedDimension.length;
@@ -440,13 +440,12 @@
         const sheetList = await getSheets();
         const element_ = document.getElementById("sheet-change");
 
-        let dd = document.getElementById("sheetdrop");
+        const dd = document.getElementById("sheetdrop");
         dd.length = 0;
 
-        let option;
         let selectedIndex = 0;
         for (let i = 0; i < sheetList.length; i++) {
-          option = document.createElement("option");
+          const option = document.createElement("option");
           option.text = sheetList[i].qMeta.title;
           option.value = sheetList[i].qMeta.id;
           dd.add(option);
@@ -457,7 +456,7 @@
         dd.selectedIndex = selectedIndex;
 
         dd.addEventListener("change", function () {
-          let selOption = dd.options[dd.selectedIndex];
+          const selOption = dd.options[dd.selectedIndex];
           element_.setAttribute("object-id", selOption.value);
         });
       }
@@ -465,7 +464,7 @@
       // Function to set Qlik-embed head script
       async function updateHeaders(configParams) {
 
-        var qlik_embed_script = document.createElement('script');
+        const qlik_embed_script = document.createElement('script');
         qlik_embed_script.setAttribute('crossorigin', 'anonymous');
         qlik_embed_script.setAttribute('type', 'application/javascript');
         qlik_embed_script.setAttribute('src', 'https://cdn.jsdelivr.net/npm/@qlik/embed-web-components@1/dist/index.min.js');
@@ -545,7 +544,7 @@
       // On load async function to load all page content in dependency order
       document.addEventListener("DOMContentLoaded", async () => {
         // Retrieve config parameters from backend server
-        var configParams = JSON.parse(await getConfigParameter());
+        const configParams = JSON.parse(await getConfigParameter());
         await updateQlikEmbedTags(configParams);
         await updateHeaders(configParams);
         await addEventListeners()

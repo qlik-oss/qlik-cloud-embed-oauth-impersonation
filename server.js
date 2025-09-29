@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 
-// Load environment variables from .env.dev file
-dotenv.config({ path: '.env.dev' });
+// Load environment variables from .env file
+dotenv.config({quiet: true });
 
 import express from "express";
 import session from "express-session";
