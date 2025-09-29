@@ -336,6 +336,22 @@ app.get("/logout", (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+try {
+  const server = app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(
+        `Port ${PORT} is already in use. Please free the port or set a different PORT environment variable.`
+      );
+    } else {
+      console.error(`Server error:`, err);
+    }
+    process.exit(1);
+  });
+} catch (err) {
+  console.error(`Failed to start server:`, err);
+  process.exit(1);
+}
