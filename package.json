@@ -8,6 +8,15 @@
     "express": "^5.0.0",
     "express-session": "^1.18.0"
   },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  },
   "main": "server.js",
-  "scripts": {}
+  "scripts": {
+    "start": "node server.js",
+    "test": "playwright test",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed"
+  }
 }
