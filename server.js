@@ -267,7 +267,10 @@ app.get("/hypercube", requireAuth, async (req, res) => {
     });
   } catch (err) {
     console.error("Hypercube error:", err);
-    res.status(500).send("Unable to retrieve hypercube");
+    
+    // Pass through the error directly
+    const statusCode = err.status || err.statusCode || 500;
+    res.status(statusCode).json(err);
   }
 });
 

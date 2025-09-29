@@ -319,21 +319,52 @@
 
       //function hide/show the page elements based on user selection
       async function addEventListeners() {
-        const navLinks = document.querySelectorAll(".nav-link");
-        const contentItems = document.querySelectorAll(".content-item");
-        navLinks.forEach((link) => {
-          link.addEventListener("click", (event) => {
-            event.preventDefault();
-            const targetId = link.getAttribute("href").substring(1);
-            contentItems.forEach((item) => {
-              if (item.id === targetId) {
-                item.style.display = "block";
-              } else {
-                item.style.display = "none";
-              }
-            });
+        try {
+          const navLinks = document.querySelectorAll(".nav-link");
+          const contentItems = document.querySelectorAll(".content-item");
+          
+          console.log(`Found ${navLinks.length} navigation links and ${contentItems.length} content items`);
+          
+          navLinks.forEach((link, index) => {
+            try {
+              link.addEventListener("click", (event) => {
+                // Add null check for href attribute
+                const href = link.getAttribute("href");
+                if (!href) {
+                  // Skip links without href (like dropdown toggles)
+                  return;
+                }
+                
+                // Only handle navigation links that start with #
+                if (!href.startsWith('#')) {
+                  // Allow normal link behavior for non-hash links
+                  return;
+                }
+                
+                event.preventDefault();
+                
+                const targetId = href.substring(1);
+                if (!targetId) {
+                  console.warn(`Navigation link ${index} has empty href after removing #:`, link);
+                  return;
+                }
+                
+                console.log(`Navigating to section: ${targetId}`);
+                contentItems.forEach((item) => {
+                  if (item.id === targetId) {
+                    item.style.display = "block";
+                  } else {
+                    item.style.display = "none";
+                  }
+                });
+              });
+            } catch (linkError) {
+              console.error(`Error adding event listener to navigation link ${index}:`, linkError, link);
+            }
           });
-        });
+        } catch (error) {
+          console.error("Error in addEventListeners:", error);
+        }
       }
 
       // Function for 'Analytics chart data' to get the Hypercube and render a table
@@ -535,13 +566,44 @@
 
       // On load async function to load all page content in dependency order
       document.addEventListener("DOMContentLoaded", async () => {
-        // Retrieve config parameters from backend server
-        const configParams = JSON.parse(await getConfigParameter());
-        await updateQlikEmbedTags(configParams);
-        await updateHeaders(configParams);
-        await addEventListeners()
-        await updateSheetsList(configParams);
-        await updateTable();
+        try {
+          console.log("DOM loaded, initializing application...");
+          
+          // Retrieve config parameters from backend server
+          const configParams = JSON.parse(await getConfigParameter());
+          console.log("Config parameters loaded:", configParams);
+          
+          await updateQlikEmbedTags(configParams);
+          console.log("Qlik embed tags updated");
+          
+          await updateHeaders(configParams);
+          console.log("Headers updated");
+          
+          await addEventListeners();
+          console.log("Event listeners added");
+          
+          await updateSheetsList(configParams);
+          console.log("Sheets list updated");
+          
+          await updateTable();
+          console.log("Table updated");
+          
+          console.log("Application initialization complete");
+        } catch (error) {
+          console.error("Error during application initialization:", error);
+          // Show user-friendly error message
+          const errorDiv = document.createElement('div');
+          errorDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; z-index: 9999; max-width: 400px;';
+          errorDiv.innerHTML = `<strong>Application Error:</strong><br>${error.message}`;
+          document.body.appendChild(errorDiv);
+          
+          // Remove error message after 10 seconds
+          setTimeout(() => {
+            if (errorDiv.parentNode) {
+              errorDiv.parentNode.removeChild(errorDiv);
+            }
+          }, 10000);
+        }
       });
 
 
