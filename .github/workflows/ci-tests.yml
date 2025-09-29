@@ -25,8 +25,10 @@ jobs:
       
       - name: Download environment file
         run: |
-          # Use printf to avoid shell interpretation of special characters
-          printf '%s\n' "${{ secrets.env }}" > .env
+          # Use here-document to safely handle special characters
+          cat > .env << 'EOF'
+          ${{ secrets.env }}
+          EOF
           echo "Environment file downloaded from secrets"
       
       - name: Install dependencies
