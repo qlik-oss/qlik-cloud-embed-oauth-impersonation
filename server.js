@@ -12,13 +12,50 @@ import {
   qix as openAppSession,
 } from "@qlik/api";
 import { fileURLToPath } from "url";
-import { getFrontendConfig, getBackendConfig } from "./config/config.js";
 import csrf from "csurf"; // Add CSRF protection
 import cookieParser from "cookie-parser"; // Required for CSRF
 
-// Load config
-const { appSettings, configBackend, configFrontend } = await getBackendConfig();
-const { myParamsConfig } = await getFrontendConfig();
+// Application settings
+const appSettings = {
+  secret: process.env.SESSION_SECRET,
+  port: process.env.PORT,
+  userPrefix: process.env.USER_PREFIX,
+  hypercubeDimension: process.env.HYPERCUBE_DIMENSION,
+  hypercubeMeasure: process.env.HYPERCUBE_MEASURE,
+};
+
+// Qlik backend configuration (with secrets, server-side only)
+const configBackend = {
+  authType: "oauth2",
+  host: process.env.TENANT_URI,
+  clientId: process.env.OAUTH_BACKEND_CLIENT_ID,
+  clientSecret: process.env.OAUTH_BACKEND_CLIENT_SECRET,
+  noCache: true,
+};
+
+// Qlik frontend configuration (with secrets, server-side only)
+const configFrontend = {
+  authType: "oauth2",
+  host: process.env.TENANT_URI,
+  clientId: process.env.OAUTH_FRONTEND_CLIENT_ID,
+  clientSecret: process.env.OAUTH_FRONTEND_CLIENT_SECRET,
+  noCache: true,
+};
+
+// Frontend parameters (sanitized, safe to send to client)
+const frontendParams = {
+  tenantUri: process.env.TENANT_URI,
+  oAuthFrontEndClientId: process.env.OAUTH_FRONTEND_CLIENT_ID,
+  appId: process.env.APP_ID,
+  sheetId: process.env.SHEET_ID,
+  objectId: process.env.OBJECT_ID,
+  fieldId: process.env.FIELD_ID,
+  assistantId: process.env.ASSISTANT_ID,
+  hypercubeDimension: process.env.HYPERCUBE_DIMENSION,
+  hypercubeMeasure: process.env.HYPERCUBE_MEASURE,
+  masterDimension: process.env.MASTER_DIMENSION,
+  masterMeasure: process.env.MASTER_MEASURE
+};
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -61,7 +98,7 @@ const csrfProtection = csrf({
 // Create a reusable function for Qlik app sessions
 async function getQlikAppSession(userId) {
   return openAppSession.openAppSession({
-    appId: myParamsConfig.appId,
+    appId: frontendParams.appId,
     hostConfig: {
       ...configFrontend,
       userId,
@@ -137,8 +174,7 @@ app.post("/access-token", [requireAuth, csrfProtection], async (req, res) => {
 
 app.post("/config", [requireAuth, csrfProtection], async (req, res) => {
   try {
-    const params = await getFrontendConfig(req.session.userId);
-    res.json(params.myParamsConfig);
+    res.json(frontendParams);
   } catch (err) {
     console.error("Config error:", err);
     res.status(500).send("Unable to retrieve configuration");
