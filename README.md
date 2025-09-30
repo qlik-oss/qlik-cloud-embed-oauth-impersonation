@@ -1,3 +1,4 @@
+[![CI Test Suite](https://github.com/qlik-oss/qlik-cloud-embed-oauth-impersonation/actions/workflows/ci-tests.yml/badge.svg)](https://github.com/qlik-oss/qlik-cloud-embed-oauth-impersonation/actions/workflows/ci-tests.yml)
 
 # Embed Qlik Sense & Qlik Answers using qlik-embed and emulated SSO (Single Sign On) via OAuth impersonation
 
