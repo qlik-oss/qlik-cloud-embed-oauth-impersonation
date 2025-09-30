@@ -11411,12 +11411,6 @@ body {
   width: 225px;
   margin: 0;
 }
-.sb-topnav.navbar-dark #sidebarToggle {
-  color: rgba(255, 255, 255, 0.5);
-}
-.sb-topnav.navbar-light #sidebarToggle {
-  color: #212529;
-}
 
 .sb-sidenav {
   display: flex;

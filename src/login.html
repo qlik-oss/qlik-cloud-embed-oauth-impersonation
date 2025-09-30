@@ -97,7 +97,9 @@
           document.getElementById('loginButton').disabled = false;
         } else {
           console.error('Error fetching CSRF token:', response.status);
-          alert('Could not initialize security features. Please refresh the page or contact support.');
+          // Still enable the button so user can try to submit (let server handle CSRF validation)
+          document.getElementById('loginButton').disabled = false;
+          alert('Could not initialize security features. Please try logging in anyway, or refresh the page if issues persist.');
         }
       } catch (error) {
         console.error('Error:', error);

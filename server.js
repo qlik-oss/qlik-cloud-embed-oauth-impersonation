@@ -1,7 +1,25 @@
 import dotenv from "dotenv";
 
-// Load environment variables from .env.dev file
-dotenv.config({ path: '.env.dev' });
+// Load environment variables from .env file
+dotenv.config({quiet: true });
+
+// Validate required environment variables
+const requiredEnvVars = [
+  'SESSION_SECRET',
+  'TENANT_URI',
+  'OAUTH_BACKEND_CLIENT_ID',
+  'OAUTH_BACKEND_CLIENT_SECRET',
+  'OAUTH_FRONTEND_CLIENT_ID',
+  'OAUTH_FRONTEND_CLIENT_SECRET',
+  'APP_ID'
+];
+
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+if (missingEnvVars.length > 0) {
+  console.error('Missing required environment variables:', missingEnvVars.join(', '));
+  console.error('Please check your .env file and ensure all required variables are set.');
+  process.exit(1);
+}
 
 import express from "express";
 import session from "express-session";
@@ -12,13 +30,50 @@ import {
   qix as openAppSession,
 } from "@qlik/api";
 import { fileURLToPath } from "url";
-import { getFrontendConfig, getBackendConfig } from "./config/config.js";
 import csrf from "csurf"; // Add CSRF protection
 import cookieParser from "cookie-parser"; // Required for CSRF
 
-// Load config
-const { appSettings, configBackend, configFrontend } = await getBackendConfig();
-const { myParamsConfig } = await getFrontendConfig();
+// Application settings
+const appSettings = {
+  secret: process.env.SESSION_SECRET,
+  port: process.env.PORT,
+  userPrefix: process.env.USER_PREFIX,
+  hypercubeDimension: process.env.HYPERCUBE_DIMENSION,
+  hypercubeMeasure: process.env.HYPERCUBE_MEASURE,
+};
+
+// Qlik backend configuration (with secrets, server-side only)
+const configBackend = {
+  authType: "oauth2",
+  host: process.env.TENANT_URI,
+  clientId: process.env.OAUTH_BACKEND_CLIENT_ID,
+  clientSecret: process.env.OAUTH_BACKEND_CLIENT_SECRET,
+  noCache: true,
+};
+
+// Qlik frontend configuration (with secrets, server-side only)
+const configFrontend = {
+  authType: "oauth2",
+  host: process.env.TENANT_URI,
+  clientId: process.env.OAUTH_FRONTEND_CLIENT_ID,
+  clientSecret: process.env.OAUTH_FRONTEND_CLIENT_SECRET,
+  noCache: true,
+};
+
+// Frontend parameters (sanitized, safe to send to client)
+const frontendParams = {
+  tenantUri: process.env.TENANT_URI,
+  oAuthFrontEndClientId: process.env.OAUTH_FRONTEND_CLIENT_ID,
+  appId: process.env.APP_ID,
+  sheetId: process.env.SHEET_ID,
+  objectId: process.env.OBJECT_ID,
+  fieldId: process.env.FIELD_ID,
+  assistantId: process.env.ASSISTANT_ID,
+  hypercubeDimension: process.env.HYPERCUBE_DIMENSION,
+  hypercubeMeasure: process.env.HYPERCUBE_MEASURE,
+  masterDimension: process.env.MASTER_DIMENSION,
+  masterMeasure: process.env.MASTER_MEASURE
+};
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -61,7 +116,7 @@ const csrfProtection = csrf({
 // Create a reusable function for Qlik app sessions
 async function getQlikAppSession(userId) {
   return openAppSession.openAppSession({
-    appId: myParamsConfig.appId,
+    appId: frontendParams.appId,
     hostConfig: {
       ...configFrontend,
       userId,
@@ -137,8 +192,7 @@ app.post("/access-token", [requireAuth, csrfProtection], async (req, res) => {
 
 app.post("/config", [requireAuth, csrfProtection], async (req, res) => {
   try {
-    const params = await getFrontendConfig(req.session.userId);
-    res.json(params.myParamsConfig);
+    res.json(frontendParams);
   } catch (err) {
     console.error("Config error:", err);
     res.status(500).send("Unable to retrieve configuration");
@@ -213,7 +267,10 @@ app.get("/hypercube", requireAuth, async (req, res) => {
     });
   } catch (err) {
     console.error("Hypercube error:", err);
-    res.status(500).send("Unable to retrieve hypercube");
+    
+    // Pass through the error directly
+    const statusCode = err.status || err.statusCode || 500;
+    res.status(statusCode).json(err);
   }
 });
 
@@ -268,6 +325,9 @@ app.get("/", csrfProtection, async (req, res) => {
     res.sendFile(path.join(__dirname, "/src/home.html"));
   } catch (error) {
     console.error("Error setting up user:", error);
+    // Clear session data on error to prevent inconsistent state
+    req.session.email = null;
+    req.session.userId = null;
     res.status(500).send("Error accessing user account");
   }
 });
@@ -279,6 +339,22 @@ app.get("/logout", (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+try {
+  const server = app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(
+        `Port ${PORT} is already in use. Please free the port or set a different PORT environment variable.`
+      );
+    } else {
+      console.error(`Server error:`, err);
+    }
+    process.exit(1);
+  });
+} catch (err) {
+  console.error(`Failed to start server:`, err);
+  process.exit(1);
+}

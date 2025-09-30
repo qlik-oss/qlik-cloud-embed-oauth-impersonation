@@ -1,0 +1,81 @@
+name: CI Test Suite
+
+on:
+  schedule:
+    # Run at midnight UTC every day
+    - cron: '0 0 * * *'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      
+      - name: Download environment file
+        run: |
+          # Use here-document to safely handle special characters
+          cat > .env << 'EOF'
+          ${{ secrets.env }}
+          EOF
+          echo "Environment file downloaded from secrets"
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: npx playwright test --reporter=html
+        env:
+          BASE_URL: http://localhost:3000
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ github.run_number }}
+          path: playwright-report/
+          retention-days: 30
+      
+      - name: Upload test videos and screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-evidence-${{ github.run_number }}
+          path: test-results/
+          retention-days: 7
+      
+      - name: Cleanup environment file
+        if: always()
+        run: |
+          rm -f .env
+          echo "Environment file cleaned up"
+      
+      - name: Generate test summary
+        if: always()
+        run: |
+          echo "## Nightly Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Run Date**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: http://localhost:3000 (local instance)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "playwright-report/index.html" ]; then
+            echo "Test report generated successfully" >> $GITHUB_STEP_SUMMARY
+            echo "[View Full Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Test report not found" >> $GITHUB_STEP_SUMMARY
+          fi
