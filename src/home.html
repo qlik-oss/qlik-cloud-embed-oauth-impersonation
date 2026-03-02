@@ -224,7 +224,7 @@
               <div id="analytics-chart" class="container content-item" style="display: none;">
                 <h1>Lightweight chart (analytics/chart)</h1>
                 <div class="viz">
-                  <qlik-embed id="visualization" ui="analytics/chart" app-id="" object-id=""></qlik-embed>
+                  <qlik-embed id="visualization" ui="analytics/chart" preview="true" app-id="" object-id=""></qlik-embed>
                 </div>
               </div>
 
@@ -252,7 +252,7 @@
                   });
                 </script>
                 <div class="viz">
-                  <qlik-embed id="visualization" ui="analytics/chart" app-id="" type="barchart" dimensions=""
+                  <qlik-embed id="visualization" ui="analytics/chart" preview="true" app-id="" type="barchart" dimensions=""
                     measures=""></qlik-embed>
                 </div>
               </div>
@@ -282,7 +282,7 @@
                   </qlik-embed>
                 </div>
                 <div class="classic-app">
-                  <qlik-embed id="sheet-change" ui="analytics/sheet" app-id="" object-id=""></qlik-embed>
+                  <qlik-embed id="sheet-change" ui="analytics/sheet" preview="true" app-id="" sheet-id=""></qlik-embed>
                 </div>
               </div>
 
@@ -505,7 +505,7 @@
           switch (qeObject.getAttribute('ui')) {
             case 'analytics/sheet':
               qeObject.setAttribute('app-id', configParams.appId);
-              qeObject.setAttribute('object-id', configParams.sheetId);
+              qeObject.setAttribute('sheet-id', configParams.sheetId);
               break;
             case 'analytics/field':
               qeObject.setAttribute('app-id', configParams.appId);
