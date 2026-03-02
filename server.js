@@ -201,13 +201,8 @@ app.post("/access-token", [requireAuth, csrfProtection], async (req, res) => {
   }
 });
 
-app.post("/config", [requireAuth, csrfProtection], async (req, res) => {
-  try {
-    res.json(frontendParams);
-  } catch (err) {
-    console.error("Config error:", err);
-    res.status(500).send("Unable to retrieve configuration");
-  }
+app.post("/config", [requireAuth, csrfProtection], (_req, res) => {
+  res.json(frontendParams);
 });
 
 // Read-only API routes don't need CSRF protection
@@ -285,9 +280,8 @@ app.get("/hypercube", requireAuth, async (req, res) => {
   }
 });
 
-// Login route - needs ratelimit protection if production
-app.get("/login", csrfProtection, (req, res) => {
-  // Add CSRF token to login page
+// Login route - needs rate-limit protection if used in production
+app.get("/login", csrfProtection, (_req, res) => {
   res.sendFile(path.join(__dirname, "/src/login.html"));
 });
 
@@ -331,8 +325,6 @@ app.get("/", csrfProtection, async (req, res) => {
       console.log("Found existing user:", currentUser.data[0].id);
     }
     
-    const csrfToken = req.csrfToken();
-    req.session.csrfToken = csrfToken;
     res.sendFile(path.join(__dirname, "/src/home.html"));
   } catch (error) {
     console.error("Error setting up user:", error);
