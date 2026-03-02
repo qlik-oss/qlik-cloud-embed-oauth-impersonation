@@ -42,7 +42,8 @@ const appSettings = {
   hypercubeMeasure: process.env.HYPERCUBE_MEASURE,
 };
 
-// Qlik backend configuration (with secrets, server-side only)
+// Qlik backend configuration (server-to-server client credentials).
+// Used to mint management tokens for user lookup/creation in this backend only.
 const configBackend = {
   authType: "oauth2",
   host: process.env.TENANT_URI,
@@ -51,7 +52,8 @@ const configBackend = {
   noCache: true,
 };
 
-// Qlik frontend configuration (with secrets, server-side only)
+// Qlik frontend configuration (server-side OAuth client for impersonated end-user tokens).
+// Used to mint tokens that access app content as the impersonated user.
 const configFrontend = {
   authType: "oauth2",
   host: process.env.TENANT_URI,
@@ -59,6 +61,22 @@ const configFrontend = {
   clientSecret: process.env.OAUTH_FRONTEND_CLIENT_SECRET,
   noCache: true,
 };
+
+// Backend token scopes for user management operations (lookup, creation). These tokens are never sent to the frontend and only used in this server.js for user provisioning.
+const BACKEND_USER_LOOKUP_SCOPE = "user_default"; // Read/list users
+const BACKEND_USER_CREATE_SCOPE = "admin_classic user_default"; // Create users + basic user access
+
+// Frontend token scopes for impersonated user app access. These tokens are sent to the frontend and used in the QIX session, so should be limited to only necessary permissions for app access.
+const FRONTEND_USER_APP_SCOPES = "user_default";
+
+// Shared hostConfig for all frontend-user token calls (QIX session + /access-token endpoint).
+function getFrontendHostConfig(userId) {
+  return {
+    ...configFrontend,
+    userId,
+    scope: FRONTEND_USER_APP_SCOPES,
+  };
+}
 
 // Frontend parameters (sanitized, safe to send to client)
 const frontendParams = {
@@ -83,7 +101,8 @@ const PORT = appSettings.port || 3000;
 // Trust proxy in production environments
 app.set('trust proxy', 1);
 
-// Set default auth config
+// Set default frontend auth client (host/client credentials only).
+// User context + scopes are supplied per request via getFrontendHostConfig(userId).
 qlikAuth.setDefaultHostConfig(configFrontend);
 
 // Configure cookie parser middleware (required for csrf)
@@ -117,11 +136,7 @@ const csrfProtection = csrf({
 async function getQlikAppSession(userId) {
   return openAppSession.openAppSession({
     appId: frontendParams.appId,
-    hostConfig: {
-      ...configFrontend,
-      userId,
-      scope: "user_default",
-    },
+    hostConfig: getFrontendHostConfig(userId),
     withoutData: false,
   });
 }
@@ -136,7 +151,7 @@ async function getQlikUser(userEmail) {
       {
         hostConfig: {
           ...configBackend,
-          scope: "user_default",
+          scope: BACKEND_USER_LOOKUP_SCOPE,
         },
       }
     );
@@ -176,11 +191,7 @@ app.post("/login", csrfProtection, async (req, res) => {
 app.post("/access-token", [requireAuth, csrfProtection], async (req, res) => {
   try {
     const accessToken = await qlikAuth.getAccessToken({
-      hostConfig: {
-        ...configFrontend,
-        userId: req.session.userId,
-        scope: "user_default",
-      },
+      hostConfig: getFrontendHostConfig(req.session.userId),
     });
     console.log("Retrieved access token for:", req.session.userId);
     res.send(accessToken);
@@ -308,7 +319,7 @@ app.get("/", csrfProtection, async (req, res) => {
         {
           hostConfig: {
             ...configBackend,
-            scope: "admin_classic user_default",
+            scope: BACKEND_USER_CREATE_SCOPE,
           },
         }
       );
