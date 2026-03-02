@@ -460,7 +460,7 @@
       // Function for 'Analytics Chart' to populate the element 'sheet-change' with
       // a sheet list returned via qlik/api (getSheets() is in script.js)
       async function updateSheetsList(configParams) {
-        const sheetList = await getSheets();
+        const sheetList = (await getSheets()).sort((a, b) => a.qData.rank - b.qData.rank);
         const element_ = document.getElementById("sheet-change");
 
         const dd = document.getElementById("sheetdrop");
