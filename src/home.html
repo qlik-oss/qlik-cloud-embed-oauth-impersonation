@@ -480,6 +480,60 @@
         );
       }
 
+      // Attach error event listeners to a qlik-embed element to detect session timeouts.
+      // Listens for both 'fatalerror' (qlik-embed specific) and 'error' (generic fallback).
+      function attachEmbedErrorListener(embedEl) {
+        const onError = () => showRefreshOverlay(embedEl);
+        embedEl.addEventListener('fatalerror', onError);
+        embedEl.addEventListener('error', onError);
+      }
+
+      // Show a "Refresh Object" button overlay on the embed container when a session error occurs.
+      // The container already has position:relative so the overlay covers the timed-out embed.
+      function showRefreshOverlay(embedEl) {
+        const container = embedEl.parentElement;
+        if (!container || container.querySelector('.session-error-overlay')) return;
+        const overlay = document.createElement('div');
+        overlay.className = 'session-error-overlay';
+        const btn = document.createElement('button');
+        btn.textContent = 'Refresh Object';
+        btn.addEventListener('click', () => refreshEmbed(embedEl, overlay));
+        overlay.appendChild(btn);
+        container.appendChild(overlay);
+      }
+
+      // Remove the overlay and re-create the qlik-embed element to establish a fresh engine session.
+      async function refreshEmbed(embedEl, overlay) {
+        overlay.remove();
+        const container = embedEl.parentElement;
+        const attrs = Object.fromEntries(Array.from(embedEl.attributes).map(a => [a.name, a.value]));
+        embedEl.remove();
+        const newEmbed = createEmbed(attrs);
+        attachEmbedErrorListener(newEmbed);
+        container.appendChild(newEmbed);
+      }
+
+      // Attach error listeners to every qlik-embed element currently in the DOM.
+      function setupErrorHandling() {
+        document.querySelectorAll('qlik-embed').forEach(attachEmbedErrorListener);
+      }
+
+      // Ping the Qlik engine every 2 minutes via getRefApi() to prevent the ~20-minute session timeout.
+      // getObject().getLayout() is the lightest engine call available through the embed web component API.
+      function setupKeepAlive() {
+        setInterval(async () => {
+          for (const embed of document.querySelectorAll('qlik-embed')) {
+            try {
+              const refApi = await embed.getRefApi();
+              const object = await refApi.getObject?.();
+              if (object?.getLayout) await object.getLayout();
+            } catch {
+              // Silently skip — embed may be in error state or not yet initialized
+            }
+          }
+        }, 2 * 60 * 1000);
+      }
+
       // Initialization: load config then set up all embeds and UI in dependency order
       document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById('footer-year').textContent = new Date().getFullYear();
@@ -492,7 +546,24 @@
           const configParams = await getConfigParameter();
 
           renderQlikEmbeds(configParams);
+
+          // Wrap getAccessToken before loading qlik-embed so any 401 triggers refresh overlays.
+          // qlik-embed is injected by updateHeaders() and uses this global by name each time it
+          // needs a fresh token, so replacing the reference here intercepts all future calls.
+          const _origGetAccessToken = window.getAccessToken;
+          window.getAccessToken = async function getAccessToken() {
+            try {
+              return await _origGetAccessToken();
+            } catch (err) {
+              document.querySelectorAll('qlik-embed').forEach(showRefreshOverlay);
+              throw err;
+            }
+          };
+
           updateHeaders(configParams);
+
+          setupErrorHandling();
+          setupKeepAlive();
 
           await updateSheetsList(configParams);
           await updateTable();
