@@ -101,7 +101,7 @@ const PORT = appSettings.port || 3000;
 // Rate limiter for file-serving routes (login page, home page)
 const fileRateLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute window
-  max: 50, // limit each IP to 50 file-serving requests per minute
+  max: 1000, // limit each IP to 1000 file-serving requests per minute
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: "Too many requests, please try again later.",
