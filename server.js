@@ -32,6 +32,7 @@ import {
 import { fileURLToPath } from "url";
 import csrf from "csurf"; // Add CSRF protection
 import cookieParser from "cookie-parser"; // Required for CSRF
+import rateLimit from "express-rate-limit"; // Rate limiting for file system requests
 
 // Application settings
 const appSettings = {
@@ -95,8 +96,23 @@ const frontendParams = {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-app.use(express.static("src"));
 const PORT = appSettings.port || 3000;
+
+// Rate limiter for file-serving routes (login page, home page)
+const fileRateLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute window
+  max: 50, // limit each IP to 50 file-serving requests per minute
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: "Too many requests, please try again later.",
+  handler: (req, res, _next, options) => {
+    console.warn(`[Rate Limit] Blocked ${req.method} ${req.originalUrl} from ${req.ip} — limit of ${options.max} requests per ${options.windowMs / 1000}s exceeded`);
+    res.status(options.statusCode).send(options.message);
+  },
+});
+
+// Serve static assets without rate limiting (CSS, JS, images don't need it)
+app.use(express.static("src"));
 
 // Trust proxy in production environments
 app.set('trust proxy', 1);
@@ -291,8 +307,9 @@ app.get("/hypercube", requireAuth, async (req, res) => {
   }
 });
 
-// Login route - needs rate-limit protection if used in production
-app.get("/login", csrfProtection, (_req, res) => {
+// Login route
+app.get("/login", fileRateLimiter, csrfProtection, (req, res) => {
+  console.log(`[File Request] ${req.method} ${req.originalUrl} from ${req.ip}`);
   res.sendFile(path.join(__dirname, "/src/login.html"));
 });
 
@@ -302,7 +319,8 @@ app.get("/csrf-token", csrfProtection, (req, res) => {
 });
 
 // Root route
-app.get("/", csrfProtection, async (req, res) => {
+app.get("/", fileRateLimiter, csrfProtection, async (req, res) => {
+  console.log(`[File Request] ${req.method} ${req.originalUrl} from ${req.ip}`);
   const email = req.session.email;
   if (!email) {
     return res.redirect("/login");
@@ -336,7 +354,7 @@ app.get("/", csrfProtection, async (req, res) => {
       console.log("Found existing user:", currentUser.data[0].id);
     }
     
-    res.sendFile(path.join(__dirname, "/src/home.html"));
+    return res.sendFile(path.join(__dirname, "/src/home.html"));
   } catch (error) {
     console.error("Error setting up user:", error);
     // Clear session data on error to prevent inconsistent state
