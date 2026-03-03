@@ -565,8 +565,10 @@
           setupErrorHandling();
           setupKeepAlive();
 
-          await updateSheetsList(configParams);
-          await updateTable();
+          await Promise.allSettled([
+            updateSheetsList(configParams),
+            updateTable(),
+          ]);
         } catch (error) {
           console.error("Initialization error:", error);
           const errorDiv = document.createElement('div');
