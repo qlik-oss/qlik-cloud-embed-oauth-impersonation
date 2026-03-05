@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 
-// Load environment variables from .env file
 dotenv.config({quiet: true });
 
 // Validate required environment variables
@@ -30,9 +29,9 @@ import {
   qix as openAppSession,
 } from "@qlik/api";
 import { fileURLToPath } from "url";
-import csrf from "csurf"; // Add CSRF protection
-import cookieParser from "cookie-parser"; // Required for CSRF
-import rateLimit from "express-rate-limit"; // Rate limiting for file system requests
+import csrf from "csurf";
+import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
 
 // Application settings
 const appSettings = {
@@ -43,8 +42,7 @@ const appSettings = {
   hypercubeMeasure: process.env.HYPERCUBE_MEASURE,
 };
 
-// Qlik backend configuration (server-to-server client credentials).
-// Used to mint management tokens for user lookup/creation in this backend only.
+// Qlik backend config for server-to-server user lookup and creation
 const configBackend = {
   authType: "oauth2",
   host: process.env.TENANT_URI,
@@ -53,8 +51,7 @@ const configBackend = {
   noCache: true,
 };
 
-// Qlik frontend configuration (server-side OAuth client for impersonated end-user tokens).
-// Used to mint tokens that access app content as the impersonated user.
+// Qlik frontend config for minting impersonated end-user access tokens
 const configFrontend = {
   authType: "oauth2",
   host: process.env.TENANT_URI,
@@ -63,14 +60,14 @@ const configFrontend = {
   noCache: true,
 };
 
-// Backend token scopes for user management operations (lookup, creation). These tokens are never sent to the frontend and only used in this server.js for user provisioning.
-const BACKEND_USER_LOOKUP_SCOPE = "user_default"; // Read/list users
-const BACKEND_USER_CREATE_SCOPE = "admin_classic user_default"; // Create users + basic user access
+// Backend-only scopes for user management API calls
+const BACKEND_USER_LOOKUP_SCOPE = "user_default";
+const BACKEND_USER_CREATE_SCOPE = "admin_classic user_default";
 
-// Frontend token scopes for impersonated user app access. These tokens are sent to the frontend and used in the QIX session, so should be limited to only necessary permissions for app access.
+// Frontend scope granted to impersonated user tokens
 const FRONTEND_USER_APP_SCOPES = "user_default";
 
-// Shared hostConfig for all frontend-user token calls (QIX session + /access-token endpoint).
+// Build a host config scoped to a specific impersonated user
 function getFrontendHostConfig(userId) {
   return {
     ...configFrontend,
@@ -79,7 +76,7 @@ function getFrontendHostConfig(userId) {
   };
 }
 
-// Frontend parameters (sanitized, safe to send to client)
+// Configuration parameters sent to the browser for qlik-embed setup
 const frontendParams = {
   tenantUri: process.env.TENANT_URI,
   oAuthFrontEndClientId: process.env.OAUTH_FRONTEND_CLIENT_ID,
@@ -100,10 +97,10 @@ const PORT = appSettings.port || 3000;
 
 // Rate limiter for file-serving routes (login page, home page)
 const fileRateLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute window
-  max: 1000, // limit each IP to 1000 file-serving requests per minute
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  windowMs: 1 * 60 * 1000,
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: "Too many requests, please try again later.",
   handler: (req, res, _next, options) => {
     console.warn(`[Rate Limit] Blocked ${req.method} ${req.originalUrl} from ${req.ip} — limit of ${options.max} requests per ${options.windowMs / 1000}s exceeded`);
@@ -111,20 +108,15 @@ const fileRateLimiter = rateLimit({
   },
 });
 
-// Serve static assets without rate limiting (CSS, JS, images don't need it)
 app.use(express.static("src"));
 
-// Trust proxy in production environments
 app.set('trust proxy', 1);
 
-// Set default frontend auth client (host/client credentials only).
-// User context + scopes are supplied per request via getFrontendHostConfig(userId).
 qlikAuth.setDefaultHostConfig(configFrontend);
 
-// Configure cookie parser middleware (required for csrf)
 app.use(cookieParser());
 
-// Configure session middleware with secure settings
+// Express session with secure cookie and 1-hour TTL
 app.use(
   session({
     secret: appSettings.secret,
@@ -132,24 +124,22 @@ app.use(
     saveUninitialized: false,
     cookie: { 
       secure: process.env.NODE_ENV === 'production',
-      httpOnly: true, // Prevent client-side JS from reading the cookie
-      maxAge: 3600000, // 1 hour
-      sameSite: 'lax' // Changed from 'strict' to 'lax' for better compatibility with redirects
+      httpOnly: true,
+      maxAge: 3600000,
+      sameSite: 'lax'
     }
   })
 );
 
-// Use express built-in parsers
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Setup CSRF protection with simple configuration
 const csrfProtection = csrf({ 
   cookie: true 
 });
 
-// Create a reusable function for Qlik app sessions
-async function getQlikAppSession(userId) {
+// Open a QIX app session (cached internally by appId+hostConfig).
+function getQlikAppSession(userId) {
   return openAppSession.openAppSession({
     appId: frontendParams.appId,
     hostConfig: getFrontendHostConfig(userId),
@@ -157,7 +147,49 @@ async function getQlikAppSession(userId) {
   });
 }
 
-// Get Qlik user (via qlik/api)
+// Execute a callback against a Qlik app doc with 3-stage session recovery:
+// 1. Try the cached session  2. Resume on failure  3. Open a fresh identity session
+async function withQlikDoc(userId, callback) {
+  const appSession = getQlikAppSession(userId);
+
+  function isSessionError(err) {
+    return err.code === -11 || err.code === -32602 ||
+      /session suspended|socket closed/i.test(err.message);
+  }
+
+  try {
+    const doc = await appSession.getDoc();
+    return await callback(doc);
+  } catch (err) {
+    if (!isSessionError(err)) throw err;
+    console.warn(`[QIX] Session error (code ${err.code}) — resuming...`);
+  }
+
+  // First retry: resume the existing session
+  try {
+    await appSession.resume();
+    console.log('[QIX] Session resumed');
+    const doc = await appSession.getDoc();
+    return await callback(doc);
+  } catch (err) {
+    if (!isSessionError(err)) throw err;
+    console.warn('[QIX] Resumed session still has stale handles — opening fresh session');
+  }
+
+  // Second retry: fresh session with unique identity to bypass cache
+  try { await appSession.close(); } catch { /* already dead */ }
+  const freshSession = openAppSession.openAppSession({
+    appId: frontendParams.appId,
+    hostConfig: getFrontendHostConfig(userId),
+    identity: `recover-${Date.now()}`,
+    withoutData: false,
+  });
+  const doc = await freshSession.getDoc();
+  console.log('[QIX] Fresh session established');
+  return await callback(doc);
+}
+
+// Look up an active Qlik user by email
 async function getQlikUser(userEmail) {
   try {
     const { data: user } = await qlikUsers.getUsers(
@@ -178,7 +210,7 @@ async function getQlikUser(userEmail) {
   }
 }
 
-// Authentication middleware
+// Redirect unauthenticated requests to the login page
 function requireAuth(req, res, next) {
   if (!req.session.userId) {
     return res.redirect("/login");
@@ -186,7 +218,7 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Apply CSRF protection to routes that change state
+// Authenticate user by email and store in session
 app.post("/login", csrfProtection, async (req, res) => {
   const { email } = req.body;
   if (!email) {
@@ -203,7 +235,7 @@ app.post("/login", csrfProtection, async (req, res) => {
   }
 });
 
-// API routes that need CSRF protection
+// Mint and return an impersonated Qlik access token for the current user
 app.post("/access-token", [requireAuth, csrfProtection], async (req, res) => {
   try {
     const accessToken = await qlikAuth.getAccessToken({
@@ -221,12 +253,12 @@ app.post("/config", [requireAuth, csrfProtection], (_req, res) => {
   res.json(frontendParams);
 });
 
-// Read-only API routes don't need CSRF protection
+// Return the list of sheets in the Qlik app
 app.get("/app-sheets", requireAuth, async (req, res) => {
   try {
-    const appSession = await getQlikAppSession(req.session.userId);
-    const app = await appSession.getDoc();
-    const sheetList = await app.getSheetList();
+    const sheetList = await withQlikDoc(req.session.userId, async (app) => {
+      return app.getSheetList();
+    });
     res.json(sheetList);
   } catch (err) {
     console.error("Sheet error:", err);
@@ -243,57 +275,55 @@ app.get("/app-sheets", requireAuth, async (req, res) => {
 
 app.get("/hypercube", requireAuth, async (req, res) => {
   try {
-    const appSession = await getQlikAppSession(req.session.userId);
-    const app = await appSession.getDoc();
-
-    // Hypercube properties
-    const properties = {
-      qInfo: {
-        qType: "my-straight-hypercube",
-      },
-      qHyperCubeDef: {
-        qDimensions: [
-          { qDef: { qFieldDefs: [appSettings.hypercubeDimension] } },
-        ],
-        qMeasures: [
-          { qDef: { qDef: appSettings.hypercubeMeasure } },
-        ],
-        qInitialDataFetch: [
-          { qHeight: 10, qWidth: 2 },
-        ],
-      },
-    };
-
-    // Extract hypercube data
-    const model = await app.createSessionObject(properties);
-    const layout = await model.getLayout();
-    let data = layout.qHyperCube.qDataPages[0].qMatrix;
-
-    // Get additional pages if needed
-    const columns = layout.qHyperCube.qSize.qcx;
-    const totalHeight = layout.qHyperCube.qSize.qcy;
-    const pageHeight = 5;
-    const numberOfPages = Math.ceil(totalHeight / pageHeight);
-
-    for (let i = 1; i < numberOfPages; i++) {
-      const page = {
-        qTop: pageHeight * i,
-        qLeft: 0,
-        qWidth: columns,
-        qHeight: pageHeight,
+    const result = await withQlikDoc(req.session.userId, async (app) => {
+      // Hypercube properties
+      const properties = {
+        qInfo: {
+          qType: "my-straight-hypercube",
+        },
+        qHyperCubeDef: {
+          qDimensions: [
+            { qDef: { qFieldDefs: [appSettings.hypercubeDimension] } },
+          ],
+          qMeasures: [
+            { qDef: { qDef: appSettings.hypercubeMeasure } },
+          ],
+          qInitialDataFetch: [
+            { qHeight: 10, qWidth: 2 },
+          ],
+        },
       };
-      const row = await model.getHyperCubeData("/qHyperCubeDef", [page]);
-      data.push(...row[0].qMatrix);
-    }
 
-    // Transform data for front-end consumption
-    const returnedDimension = data.map(row => row[0].qText);
-    const returnedMeasure = data.map(row => row[1].qText);
+      // Extract hypercube data
+      const model = await app.createSessionObject(properties);
+      const layout = await model.getLayout();
+      let data = layout.qHyperCube.qDataPages[0].qMatrix;
 
-    res.json({
-      returnedDimension: returnedDimension,
-      returnedMeasure: returnedMeasure
+      // Get additional pages if needed
+      const columns = layout.qHyperCube.qSize.qcx;
+      const totalHeight = layout.qHyperCube.qSize.qcy;
+      const pageHeight = 5;
+      const numberOfPages = Math.ceil(totalHeight / pageHeight);
+
+      for (let i = 1; i < numberOfPages; i++) {
+        const page = {
+          qTop: pageHeight * i,
+          qLeft: 0,
+          qWidth: columns,
+          qHeight: pageHeight,
+        };
+        const row = await model.getHyperCubeData("/qHyperCubeDef", [page]);
+        data.push(...row[0].qMatrix);
+      }
+
+      // Transform data for front-end consumption
+      return {
+        returnedDimension: data.map(row => row[0].qText),
+        returnedMeasure: data.map(row => row[1].qText),
+      };
     });
+
+    res.json(result);
   } catch (err) {
     console.error("Hypercube error:", err);
     const statusCode = err.status || err.statusCode || 500;
@@ -307,18 +337,18 @@ app.get("/hypercube", requireAuth, async (req, res) => {
   }
 });
 
-// Login route
+// Serve the login page with a CSRF token
 app.get("/login", fileRateLimiter, csrfProtection, (req, res) => {
   console.log(`[File Request] ${req.method} ${req.originalUrl} from ${req.ip}`);
   res.sendFile(path.join(__dirname, "/src/login.html"));
 });
 
-// CSRF route
+// Return a fresh CSRF token for client-side form submissions
 app.get("/csrf-token", csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
-// Root route
+// Resolve the Qlik user (create if needed) and serve the home page
 app.get("/", fileRateLimiter, csrfProtection, async (req, res) => {
   console.log(`[File Request] ${req.method} ${req.originalUrl} from ${req.ip}`);
   const email = req.session.email;
@@ -357,7 +387,7 @@ app.get("/", fileRateLimiter, csrfProtection, async (req, res) => {
     return res.sendFile(path.join(__dirname, "/src/home.html"));
   } catch (error) {
     console.error("Error setting up user:", error);
-    // Clear session data on error to prevent inconsistent state
+    // Clear session on error
     req.session.email = null;
     req.session.userId = null;
     res.status(500).send("Error accessing user account");
@@ -370,7 +400,7 @@ app.get("/logout", (req, res) => {
   });
 });
 
-// Start the server
+// Start Express and listen on the configured port
 try {
   const server = app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
