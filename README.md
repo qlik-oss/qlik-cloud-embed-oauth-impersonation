@@ -127,3 +127,82 @@ Alternatively, you can download and extract the project files.
 1. Open <http://localhost:3000> in your browser.
 
 You should see your web app running locally.
+
+## How it works
+
+This demo uses **two separate OAuth clients** to keep credentials scoped to their intended purpose:
+
+```
+Browser                     Node.js server (server.js)          Qlik Cloud
+  │                                   │                               │
+  │  1. POST /login (email)           │                               │
+  │──────────────────────────────────>│                               │
+  │                                   │  2. Look up / create user     │
+  │                                   │   (Backend M2M client)        │
+  │                                   │──────────────────────────────>│
+  │                                   │<──────────────────────────────│
+  │  3. Serve home.html               │                               │
+  │<──────────────────────────────────│                               │
+  │                                   │                               │
+  │  4. POST /access-token            │                               │
+  │──────────────────────────────────>│                               │
+  │                                   │  5. Mint impersonation token  │
+  │                                   │   (Frontend M2M client)       │
+  │                                   │──────────────────────────────>│
+  │                                   │<──────────────────────────────│
+  │  6. Token returned to browser     │                               │
+  │<──────────────────────────────────│                               │
+  │                                   │                               │
+  │  7. qlik-embed uses token to      │                               │
+  │     render analytics directly     │                               │
+  │──────────────────────────────────────────────────────────────────>│
+```
+
+| OAuth client | Configured with | Used for |
+|---|---|---|
+| **Backend M2M** (`admin_classic`, `user_default`) | `OAUTH_BACKEND_CLIENT_ID` / `SECRET` | Server-side: look up and create Qlik users. Credentials **never** leave the server. |
+| **Frontend M2M impersonation** (`user_default`) | `OAUTH_FRONTEND_CLIENT_ID` / `SECRET` | Server-side: mint short-lived tokens that impersonate a specific user. Tokens are passed to the browser for use by `qlik-embed`. |
+
+The browser never sees the OAuth client secrets. It only ever receives a short-lived access token that it passes to `qlik-embed` via the `data-get-access-token` callback.
+
+## Project structure
+
+```
+├── server.js               # Express backend: auth flow, user provisioning, API routes
+├── template.env            # Copy to .env and fill in your credentials
+├── src/
+│   ├── home.html           # Main dashboard — all qlik-embed examples in one page
+│   ├── login.html          # Demo login form (email only, no real auth)
+│   ├── js/
+│   │   └── script.js       # Frontend helpers: getAccessToken, getConfig, getSheets, getHypercube
+│   └── css/
+│       └── qlik-embed-style.css  # Layout styles for embed containers
+└── tests/                  # Playwright end-to-end tests
+```
+
+**Key entry points for reading the code:**
+
+- `server.js` lines 45–93 — the two OAuth configs and the `getFrontendHostConfig()` helper
+- `server.js` `POST /access-token` — how a user-scoped token is minted on each request
+- `server.js` `GET /` — how a Qlik user is looked up or created on first login
+- `src/js/script.js` `getAccessToken()` — the callback `qlik-embed` calls for tokens
+- `src/home.html` `updateHeaders()` — how `qlik-embed` is loaded and configured
+- `src/home.html` `updateQlikEmbedTags()` — how app/sheet/object IDs are set at runtime
+
+## Testing
+
+The project includes [Playwright](https://playwright.dev) end-to-end tests that verify authentication and content rendering. Tests require a configured `.env` file pointing at a live Qlik Cloud tenant.
+
+```shell
+# Run all tests (headless)
+npm test
+
+# Watch tests run in a real browser
+npm test -- --headed
+
+# Open the interactive Playwright UI
+npm test -- --ui
+
+# View the HTML test report after a run
+npm run test:report
+```

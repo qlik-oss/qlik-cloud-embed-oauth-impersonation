@@ -44,6 +44,7 @@ async function getAccessToken() {
 
 // Retrieve the list of sheets in the Qlik Sense app from the backend
 async function getSheets() {
+  try {
     const response = await fetch("/app-sheets", {
       method: "GET",
       credentials: "include",
@@ -53,28 +54,35 @@ async function getSheets() {
     if (response.status === 200) {
       return response.json();
     }
-    const err = new Error("Unexpected error");
+    const err = new Error("Unexpected error retrieving sheet list");
     err.status = response.status;
     err.detail = await response.text().catch(() => "No details available");
     throw err;
+  } catch (error) {
+    console.error("Sheets error:", error);
+    throw error;
+  }
 }
 
 
 // Retrieve a data set (hypercube) from the backend
 async function getHypercube() {
-  const response = await fetch("/hypercube", {
-    method: "GET",
-    credentials: "include",
-    mode: "same-origin",
-    redirect: "follow",
-  });
-  if (response.status === 200) {
-    return response.json();
+  try {
+    const response = await fetch("/hypercube", {
+      method: "GET",
+      credentials: "include",
+      mode: "same-origin",
+      redirect: "follow",
+    });
+    if (response.status === 200) {
+      return response.json();
+    }
+    const errorData = await response.json();
+    throw errorData;
+  } catch (error) {
+    console.error("Hypercube error:", error);
+    throw error;
   }
-  
-  // Pass through the error response directly
-  const errorData = await response.json();
-  throw errorData;
 }
 
 
@@ -96,9 +104,9 @@ async function getConfigParameter() {
     });
     
     if (response.status === 200) {
-      return response.text();
+      return response.json();
     }
-    
+
     const err = new Error("Unexpected server-side authentication error");
     err.status = response.status;
     err.detail = await response.text().catch(() => "No details available");

@@ -213,26 +213,18 @@
               </div>
 
               <div id="classic-app" class="container content-item" style="display: none;">
-                <h1>
-                  Full Qlik Sense (classic/app)
-                </h1>
-                <div class="classic-app">
-                  <qlik-embed ui="classic/app" app-id="" sheet-id=""></qlik-embed>
-                </div>
+                <h1>Full Qlik Sense (classic/app)</h1>
+                <div class="embed-classic"></div>
               </div>
 
               <div id="analytics-chart" class="container content-item" style="display: none;">
                 <h1>Lightweight chart (analytics/chart)</h1>
-                <div class="viz">
-                  <qlik-embed id="visualization" ui="analytics/chart" app-id="" object-id=""></qlik-embed>
-                </div>
+                <div class="embed-viz"></div>
               </div>
 
               <div id="ai-assistant" class="container content-item" style="display: none;">
                 <h1>AI Assistant (ai/assistant)</h1>
-                <div class="ai">
-                  <qlik-embed id="visualization" ui="ai/assistant" assistant-id=""></qlik-embed>
-                </div>
+                <div class="embed-ai"></div>
               </div>
 
               <div id="on-the-fly" class="container content-item" style="display: none;">
@@ -245,52 +237,32 @@
                     <option value="linechart">Line chart</option>
                   </select>
                 </div>
-                <script>
-                  document.getElementById('chartType').addEventListener('change', function () {
-                    const visualization = document.querySelector('#on-the-fly qlik-embed');
-                    visualization.setAttribute('type', this.value);
-                  });
-                </script>
-                <div class="viz">
-                  <qlik-embed id="visualization" ui="analytics/chart" app-id="" type="barchart" dimensions=""
-                    measures=""></qlik-embed>
-                </div>
+                <div class="embed-viz"></div>
               </div>
 
               <div id="analytics-chart-data" class="container content-item" style="display: none;">
                 <h1>Direct access to data (qlik-api)</h1>
-                <div id="chart-data" class="table"></div>
+                <div id="chart-data" class="embed-data"></div>
               </div>
 
               <div id="field" class="container content-item" style="display: none;">
                 <h1>Filterable field (analytics/field)</h1>
-                <div class="viz">
-                  <qlik-embed ui="analytics/field" app-id="" field-id=""></qlik-embed>
-                </div>
+                <div class="embed-viz"></div>
               </div>
 
               <div id="sheet-nav" class="container content-item" style="display: none;">
-                <h1>
-                  Lightweight sheet (analytics/sheet with sheet navigation)
-                </h1>
+                <h1>Lightweight sheet (analytics/sheet with sheet navigation)</h1>
                 <div class="app-selector">
                   <label for="sheetdrop">Select Sheet:</label>
                   <select id="sheetdrop" name="SheetList" class="form-select"></select>
                 </div>
-                <div class="selections-bar">
-                  <qlik-embed ui="analytics/selections" app-id="">
-                  </qlik-embed>
-                </div>
-                <div class="classic-app">
-                  <qlik-embed id="sheet-change" ui="analytics/sheet" app-id="" object-id=""></qlik-embed>
-                </div>
+                <div class="embed-selections"></div>
+                <div class="embed-classic"></div>
               </div>
 
               <div id="classic-chart" class="container content-item" style="display: none;">
                 <h1>Legacy charts (classic/chart)</h1>
-                <div class="classic-app">
-                  <qlik-embed id="classicChartObject" ui="classic/chart" app-id="" object-id=""></qlik-embed>
-                </div>
+                <div class="embed-classic"></div>
               </div>
 
             </div>
@@ -299,9 +271,7 @@
         <footer class="py-4 bg-light mt-auto">
           <div class="container-fluid px-4">
             <div class="d-flex align-items-center justify-content-between small">
-              <div class="text-muted">Copyright &copy; My Company
-                <script>document.write(new Date().getFullYear())</script>
-              </div>
+              <div class="text-muted">Copyright &copy; My Company <span id="footer-year"></span></div>
               <div>
                 <a href="#">Privacy Policy</a>
                 &middot;
@@ -317,295 +287,358 @@
 
     <script type="module">
 
-      //function hide/show the page elements based on user selection
-      async function addEventListeners() {
-        try {
-          const navLinks = document.querySelectorAll(".nav-link");
-          const contentItems = document.querySelectorAll(".content-item");
-          
-          console.log(`Found ${navLinks.length} navigation links and ${contentItems.length} content items`);
-          
-          navLinks.forEach((link, index) => {
-            try {
-              link.addEventListener("click", (event) => {
-                // Add null check for href attribute
-                const href = link.getAttribute("href");
-                if (!href) {
-                  // Skip links without href (like dropdown toggles)
-                  return;
-                }
-                
-                // Only handle navigation links that start with #
-                if (!href.startsWith('#')) {
-                  // Allow normal link behavior for non-hash links
-                  return;
-                }
-                
-                event.preventDefault();
-                
-                const targetId = href.substring(1);
-                if (!targetId) {
-                  console.warn(`Navigation link ${index} has empty href after removing #:`, link);
-                  return;
-                }
-                
-                console.log(`Navigating to section: ${targetId}`);
-                contentItems.forEach((item) => {
-                  if (item.id === targetId) {
-                    item.style.display = "block";
-                  } else {
-                    item.style.display = "none";
-                  }
-                });
-              });
-            } catch (linkError) {
-              console.error(`Error adding event listener to navigation link ${index}:`, linkError, link);
-            }
+      // Show/hide page sections based on sidebar navigation clicks
+      function addEventListeners() {
+        const navLinks = document.querySelectorAll(".nav-link");
+        const contentItems = document.querySelectorAll(".content-item");
+
+        navLinks.forEach((link) => {
+          link.addEventListener("click", (event) => {
+            const href = link.getAttribute("href");
+            // Only intercept in-page anchor links (e.g. "#sheet-nav")
+            if (!href || !href.startsWith('#')) return;
+
+            event.preventDefault();
+            const targetId = href.substring(1);
+
+            contentItems.forEach((item) => {
+              item.style.display = item.id === targetId ? "block" : "none";
+            });
           });
-        } catch (error) {
-          console.error("Error in addEventListeners:", error);
-        }
+        });
       }
 
-      // Function for 'Analytics chart data' to get the Hypercube and render a table
-      // in dom element 'chart-data' with the retrieved dimensions and measures from
-      // the hypercube in element 'visualization'
+      // Update the on-the-fly chart's type attribute when the dropdown selection changes.
+      function addChartTypeListener() {
+        document.getElementById('chartType').addEventListener('change', function () {
+          const embed = document.querySelector('#on-the-fly qlik-embed');
+          if (embed) embed.setAttribute('type', this.value);
+        });
+      }
+
+      // Fetch hypercube data from the backend and render it as an HTML table.
       async function updateTable() {
         try {
           const response = await getHypercube();
 
-          // Since the response doesn't have a status property, we need to check if it's valid
-          if (!response || response.error) {
-            document.getElementById("chart-data").textContent = "Error retrieving data.";
-            console.error("Failed to retrieve hypercube data.", response?.message || "");
-            return;
-          }
-
-          if (!response.returnedDimension || !response.returnedMeasure) {
-            document.getElementById("chart-data").textContent = "Invalid data structure received.";
-            console.error("Hypercube missing expected properties:", response);
-            return;
-          }
-
           const container = document.getElementById("chart-data");
-          container.innerHTML = ''; // Clear previous content
+          container.innerHTML = '';
 
           const table = document.createElement("table");
           table.classList.add("table", "table-striped", "table-bordered");
 
-          const cols = Object.keys(response);
           const thead = document.createElement("thead");
-          const tr = document.createElement("tr");
-
-          cols.forEach((item) => {
+          const headerRow = document.createElement("tr");
+          Object.keys(response).forEach((key) => {
             const th = document.createElement("th");
-            th.textContent = item;
+            th.textContent = key;
             th.scope = "col";
-            tr.appendChild(th);
+            headerRow.appendChild(th);
           });
-
-          thead.appendChild(tr);
+          thead.appendChild(headerRow);
           table.appendChild(thead);
 
-          // Create table body
           const tbody = document.createElement("tbody");
-
-          // Determine the number of rows based on the returnedDimension array length
-          const rowCount = response.returnedDimension.length;
-
-          // Loop through the data arrays
-          for (let i = 0; i < rowCount; i++) {
-            // Create table row
+          for (let i = 0; i < response.returnedDimension.length; i++) {
             const row = document.createElement('tr');
 
-            // Add Product Type cell
-            const productTypeCell = document.createElement('td');
-            productTypeCell.textContent = response.returnedDimension[i];
-            row.appendChild(productTypeCell);
+            const dimCell = document.createElement('td');
+            dimCell.textContent = response.returnedDimension[i];
+            row.appendChild(dimCell);
 
-            // Add Sales Amount cell
-            const returnedMeasureCell = document.createElement('td');
-            returnedMeasureCell.textContent = response.returnedMeasure[i];
-            row.appendChild(returnedMeasureCell);
+            const measureCell = document.createElement('td');
+            measureCell.textContent = response.returnedMeasure[i];
+            row.appendChild(measureCell);
 
             tbody.appendChild(row);
           }
 
           table.appendChild(tbody);
           container.appendChild(table);
-
-          // Add a style for the table
-          const style = document.createElement('style');
-          style.textContent = `
-            #chart-data table {
-              width: 100%;
-              margin-top: 20px;
-            }
-            #chart-data th, #chart-data td {
-              padding: 8px;
-              text-align: left;
-            }
-            #chart-data th {
-              background-color: #f2f2f2;
-            }
-          `;
-          container.appendChild(style);
-
         } catch (error) {
           console.error("Error updating table:", error);
-          document.getElementById("chart-data").textContent = "Error processing data: " + error.message;
+          document.getElementById("chart-data").textContent = "Error loading data: " + error.message;
         }
       }
 
-      // Function for 'Analytics Chart' to populate the element 'sheet-change' with
-      // a sheet list returned via qlik/api (getSheets() is in script.js)
+      // Populate the sheet dropdown and update the analytics/sheet embed on selection change.
       async function updateSheetsList(configParams) {
-        const sheetList = await getSheets();
-        const element_ = document.getElementById("sheet-change");
+        const sheetList = (await getSheets()).sort((a, b) => a.qData.rank - b.qData.rank);
+        const sheetEmbed = document.getElementById("sheet-change");
+        const dropdown = document.getElementById("sheetdrop");
 
-        const dd = document.getElementById("sheetdrop");
-        dd.length = 0;
-
+        dropdown.length = 0;
         let selectedIndex = 0;
         for (let i = 0; i < sheetList.length; i++) {
           const option = document.createElement("option");
           option.text = sheetList[i].qMeta.title;
           option.value = sheetList[i].qMeta.id;
-          dd.add(option);
+          dropdown.add(option);
           if (sheetList[i].qMeta.id === configParams.sheetId) {
             selectedIndex = i;
           }
         }
-        dd.selectedIndex = selectedIndex;
+        dropdown.selectedIndex = selectedIndex;
 
-        dd.addEventListener("change", function () {
-          const selOption = dd.options[dd.selectedIndex];
-          element_.setAttribute("object-id", selOption.value);
+        dropdown.addEventListener("change", function () {
+          sheetEmbed.setAttribute("sheet-id", dropdown.options[dropdown.selectedIndex].value);
         });
       }
 
-      // Function to set Qlik-embed head script
-      async function updateHeaders(configParams) {
-
-        const qlik_embed_script = document.createElement('script');
-        qlik_embed_script.setAttribute('crossorigin', 'anonymous');
-        qlik_embed_script.setAttribute('type', 'application/javascript');
-        qlik_embed_script.setAttribute('src', 'https://cdn.jsdelivr.net/npm/@qlik/embed-web-components@1/dist/index.min.js');
-        qlik_embed_script.setAttribute('data-host', configParams.tenantUri);
-        qlik_embed_script.setAttribute('data-client-id', configParams.oAuthFrontEndClientId);
-        qlik_embed_script.setAttribute('data-get-access-token', 'getAccessToken');
-        qlik_embed_script.setAttribute('data-auth-type', 'OAuth2');
-        await document.head.appendChild(qlik_embed_script);
+      // Inject the qlik-embed web components script with tenant URL, OAuth client ID,
+      // access-token callback, and WebSocket event handler attributes.
+      function updateHeaders(configParams) {
+        const script = document.createElement('script');
+        script.setAttribute('crossorigin', 'anonymous');
+        script.setAttribute('type', 'application/javascript');
+        script.setAttribute('src', 'https://cdn.jsdelivr.net/npm/@qlik/embed-web-components@1/dist/index.min.js');
+        script.setAttribute('data-host', configParams.tenantUri);
+        script.setAttribute('data-client-id', configParams.oAuthFrontEndClientId);
+        script.setAttribute('data-get-access-token', 'getAccessToken');
+        script.setAttribute('data-on-websocket-event', 'onQlikWebSocketEvent');
+        script.setAttribute('data-auth-type', 'OAuth2');
+        document.head.appendChild(script);
       }
 
-      // Function to update template qlik-embed tags with the source appId
-      async function updateQlikEmbedTags(configParams) {
-        const qeObjects = document.querySelectorAll('qlik-embed');
-        for (const qeObject of qeObjects) {
-          switch (qeObject.getAttribute('ui')) {
-            case 'analytics/sheet':
-              qeObject.setAttribute('app-id', configParams.appId);
-              qeObject.setAttribute('object-id', configParams.sheetId);
-              break;
-            case 'analytics/field':
-              qeObject.setAttribute('app-id', configParams.appId);
-              qeObject.setAttribute('field-id', configParams.fieldId);
-              break;
-            case 'analytics/selections':
-              qeObject.setAttribute('app-id', configParams.appId);
-              break;
-            case 'classic/app':
-              qeObject.setAttribute('app-id', configParams.appId);
-              qeObject.setAttribute('sheet-id', configParams.sheetId);
-              break;
-            case 'classic/chart':
-              qeObject.setAttribute('app-id', configParams.appId);
-              qeObject.setAttribute('object-id', configParams.objectId);
-              break;
-            case 'analytics/chart':
-              qeObject.setAttribute('app-id', configParams.appId);
-              // Check if this is in the on-the-fly section
-              if (qeObject.parentNode.parentNode.id === 'on-the-fly') {
-                qeObject.setAttribute('dimensions', "[\"[" + configParams.masterDimension + "]\"]");
-                qeObject.setAttribute('measures', "[\"[" + configParams.masterMeasure + "]\"]");
-              } else {
-                qeObject.setAttribute('object-id', configParams.objectId);
-              }
-              break;
-            case 'ai/assistant':
-              // Create a placeholder element to show while loading
-              const aiContainer = qeObject.parentNode;
-              const loadingMsg = document.createElement('div');
-              loadingMsg.id = 'ai-assistant-loading';
-              loadingMsg.textContent = 'Loading AI Assistant...';
-              loadingMsg.style.padding = '20px';
-              loadingMsg.style.textAlign = 'center';
-              loadingMsg.style.fontSize = '16px';
-              
-              // Hide the AI assistant element initially
-              qeObject.style.display = 'none';
+      // Create a <qlik-embed> element with the given attribute map.
+      function createEmbed(attributes) {
+        const el = document.createElement('qlik-embed');
+        for (const [attr, value] of Object.entries(attributes)) {
+          el.setAttribute(attr, value);
+        }
+        return el;
+      }
 
-              // Add the loading message
-              aiContainer.insertBefore(loadingMsg, qeObject);
+      // Create and append all <qlik-embed> elements, one per UI type.
+      function renderQlikEmbeds(configParams) {
 
-              // Set attribute but delay rendering for 2 seconds
-              qeObject.setAttribute('assistant-id', configParams.assistantId);
+        // classic/app: full Qlik Sense sheet experience
+        document.querySelector('#classic-app .embed-classic').appendChild(
+          createEmbed({ ui: 'classic/app', 'app-id': configParams.appId, 'sheet-id': configParams.sheetId })
+        );
 
-              // After 2 seconds, show the AI assistant and remove loading message
-              setTimeout(() => {
-                const loadingElement = document.getElementById('ai-assistant-loading');
-                if (loadingElement) {
-                  loadingElement.remove();
-                }
-                qeObject.style.display = 'block';
-              }, 2000);
-              break;
+        // analytics/chart: lightweight single chart from an existing app object
+        document.querySelector('#analytics-chart .embed-viz').appendChild(
+          createEmbed({ ui: 'analytics/chart', preview: 'true', 'app-id': configParams.appId, 'object-id': configParams.objectId })
+        );
+
+        // ai/assistant: only render if an assistant ID is configured in the environment
+        if (configParams.assistantId) {
+          const aiContainer = document.querySelector('#ai-assistant .embed-ai');
+          const loadingMsg = document.createElement('div');
+          loadingMsg.id = 'ai-assistant-loading';
+          loadingMsg.textContent = 'Loading AI Assistant...';
+          loadingMsg.style.cssText = 'padding:20px; text-align:center; font-size:16px;';
+          aiContainer.appendChild(loadingMsg);
+
+          const aiEmbed = createEmbed({ ui: 'ai/assistant', 'assistant-id': configParams.assistantId });
+          aiEmbed.style.display = 'none';
+          aiContainer.appendChild(aiEmbed);
+
+          setTimeout(() => {
+            document.getElementById('ai-assistant-loading')?.remove();
+            aiEmbed.style.display = 'block';
+          }, 2000);
+        } else {
+          document.querySelector('#ai-assistant .embed-ai').textContent =
+            'No AI Assistant configured. Set ASSISTANT_ID in your .env file to enable this section.';
+        }
+
+        // analytics/chart (on-the-fly): chart defined inline from master items
+        document.querySelector('#on-the-fly .embed-viz').appendChild(
+          createEmbed({
+            id: 'visualization',
+            ui: 'analytics/chart',
+            'app-id': configParams.appId,
+            type: 'barchart',
+            dimensions: `["[${configParams.masterDimension}]"]`,
+            measures: `["[${configParams.masterMeasure}]"]`,
+          })
+        );
+
+        // analytics/field: filterable list box for a dimension field
+        document.querySelector('#field .embed-viz').appendChild(
+          createEmbed({ ui: 'analytics/field', 'app-id': configParams.appId, 'field-id': configParams.fieldId })
+        );
+
+        // analytics/selections + analytics/sheet: selections toolbar above the sheet embed
+        document.querySelector('#sheet-nav .embed-selections').appendChild(
+          createEmbed({ ui: 'analytics/selections', 'app-id': configParams.appId })
+        );
+        document.querySelector('#sheet-nav .embed-classic').appendChild(
+          createEmbed({ id: 'sheet-change', ui: 'analytics/sheet', preview: 'true', 'app-id': configParams.appId, 'sheet-id': configParams.sheetId })
+        );
+
+        // classic/chart: legacy chart rendering for older chart types and extensions
+        document.querySelector('#classic-chart .embed-classic').appendChild(
+          createEmbed({ id: 'classicChartObject', ui: 'classic/chart', 'app-id': configParams.appId, 'object-id': configParams.objectId })
+        );
+      }
+
+      // Return all qlik-embed elements except ai/* UIs
+      function getNonAiEmbeds() {
+        return [...document.querySelectorAll('qlik-embed')].filter(
+          el => !el.getAttribute('ui')?.startsWith('ai/')
+        );
+      }
+
+      // Probe each non-ai embed's engine session and refresh any that are unresponsive
+      async function checkAndRefreshEmbeds() {
+        for (const embed of getNonAiEmbeds()) {
+          const ui = embed.getAttribute('ui') || embed.getAttribute('id') || 'unknown';
+          try {
+            const refApi = await withTimeout(embed.getRefApi(), 5000);
+            const doc = await withTimeout(
+              refApi?.getDoc?.() ?? Promise.reject(new Error('getDoc not available')),
+              5000
+            );
+            await withTimeout(doc.getAppProperties(), 5000);
+          } catch {
+            console.warn(`[HealthCheck] [${ui}] embed is unresponsive — refreshing`);
+            showRefreshOverlay(embed);
           }
         }
       }
 
-      // On load async function to load all page content in dependency order
+      // Register fatalerror/error listeners on a qlik-embed element to trigger health checks
+      function attachEmbedErrorListener(embedEl) {
+        if (embedEl.getAttribute('ui')?.startsWith('ai/')) return;
+        const ui = embedEl.getAttribute('ui') || embedEl.getAttribute('id') || 'unknown';
+        embedEl.addEventListener('fatalerror', (evt) => {
+          console.error(`[EmbedError] [${ui}] fatalerror event fired:`, evt);
+          checkAndRefreshEmbeds();
+        });
+        embedEl.addEventListener('error', (evt) => {
+          console.error(`[EmbedError] [${ui}] error event fired:`, evt);
+          checkAndRefreshEmbeds();
+        });
+      }
+
+      // Display a "Reconnecting…" overlay over the embed, then auto-refresh after 1.5 s
+      function showRefreshOverlay(embedEl) {
+        if (embedEl.getAttribute('ui')?.startsWith('ai/')) return;
+        const container = embedEl.parentElement;
+        if (!container || container.querySelector('.session-error-overlay')) return;
+
+        const ui = embedEl.getAttribute('ui') || embedEl.getAttribute('id') || 'unknown';
+        console.log(`[EmbedError] [${ui}] Showing reconnecting overlay, will auto-refresh in 1.5s`);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'session-error-overlay';
+        overlay.textContent = 'Reconnecting…';
+        container.appendChild(overlay);
+
+        setTimeout(() => refreshEmbed(embedEl, overlay), 1500);
+      }
+
+      // Remove the old qlik-embed element and replace it with a fresh one
+      async function refreshEmbed(embedEl, overlay) {
+        const ui = embedEl.getAttribute('ui') || embedEl.getAttribute('id') || 'unknown';
+        console.log(`[EmbedRefresh] [${ui}] Removing overlay and re-creating embed element`);
+        overlay.remove();
+        const container = embedEl.parentElement;
+        const attrs = Object.fromEntries(Array.from(embedEl.attributes).map(a => [a.name, a.value]));
+        embedEl.remove();
+        const newEmbed = createEmbed(attrs);
+        attachEmbedErrorListener(newEmbed);
+        container.appendChild(newEmbed);
+        console.log(`[EmbedRefresh] [${ui}] New embed element appended to DOM`);
+      }
+
+      // Global WebSocket event handler registered via data-on-websocket-event
+      // Triggers embed health checks on closed or error events
+      window.onQlikWebSocketEvent = function onQlikWebSocketEvent(event) {
+        if (event.type === 'closed') {
+          console.warn('[WebSocket] Connection CLOSED — checking all embeds', event);
+          checkAndRefreshEmbeds();
+        } else if (event.type === 'error') {
+          console.error('[WebSocket] Connection ERROR — checking all embeds', event);
+          checkAndRefreshEmbeds();
+        } else {
+          console.log('[WebSocket]', event.type, event);
+        }
+      };
+
+      // Race a promise against a timeout and reject if the timeout fires first
+      function withTimeout(promise, ms) {
+        return Promise.race([
+          promise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timed out')), ms)),
+        ]);
+      }
+
+      // Ping the first analytics/* embed every 2 minutes via createSessionObject/destroySessionObject
+      // to keep the shared engine WebSocket alive
+      function setupKeepAlive() {
+        setInterval(async () => {
+          const embed = document.querySelector('qlik-embed[ui^="analytics/"]');
+          if (!embed) return;
+
+          const ui = embed.getAttribute('ui');
+          try {
+            const refApi = await withTimeout(embed.getRefApi(), 10000);
+            const doc = await withTimeout(
+              refApi?.getDoc?.() ?? Promise.reject(new Error('getDoc not available')),
+              10000
+            );
+
+            const tempObj = await withTimeout(doc.createSessionObject({
+              qInfo: { qType: 'keepalive-ping' },
+            }), 10000);
+            const handle = tempObj.id || tempObj.qInfo?.qId;
+            if (handle) {
+              await withTimeout(doc.destroySessionObject(handle), 10000);
+            }
+          } catch (err) {
+            console.warn(`[KeepAlive] [${ui}] Engine ping FAILED:`, err?.message || err);
+            console.warn('[KeepAlive] Checking all embeds for failures');
+            checkAndRefreshEmbeds();
+          }
+        }, 2 * 60 * 1000);
+      }
+
+      // Initialize the page: fetch config, render embeds, wire up error recovery, load data
       document.addEventListener("DOMContentLoaded", async () => {
+        document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+        // Register navigation and chart-type listeners (no config dependency)
+        addEventListeners();
+        addChartTypeListener();
+
         try {
-          console.log("DOM loaded, initializing application...");
-          
-          // Retrieve config parameters from backend server
-          const configParams = JSON.parse(await getConfigParameter());
-          console.log("Config parameters loaded:", configParams);
-          
-          await updateQlikEmbedTags(configParams);
-          console.log("Qlik embed tags updated");
-          
-          await updateHeaders(configParams);
-          console.log("Headers updated");
-          
-          await addEventListeners();
-          console.log("Event listeners added");
-          
-          await updateSheetsList(configParams);
-          console.log("Sheets list updated");
-          
-          await updateTable();
-          console.log("Table updated");
-          
-          console.log("Application initialization complete");
+          const configParams = await getConfigParameter();
+
+          renderQlikEmbeds(configParams);
+
+          // Wrap getAccessToken to trigger embed health checks on token failures
+          const _origGetAccessToken = window.getAccessToken;
+          window.getAccessToken = async function getAccessToken() {
+            try {
+              return await _origGetAccessToken();
+            } catch (err) {
+              checkAndRefreshEmbeds();
+              throw err;
+            }
+          };
+
+          updateHeaders(configParams);
+
+          document.querySelectorAll('qlik-embed').forEach(attachEmbedErrorListener);
+          setupKeepAlive();
+
+          await Promise.allSettled([
+            updateSheetsList(configParams),
+            updateTable(),
+          ]);
         } catch (error) {
-          console.error("Error during application initialization:", error);
-          // Show user-friendly error message
+          console.error("Initialization error:", error);
           const errorDiv = document.createElement('div');
-          errorDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; z-index: 9999; max-width: 400px;';
+          errorDiv.style.cssText = 'position:fixed; top:20px; right:20px; background:#f8d7da; color:#721c24; padding:15px; border-radius:5px; z-index:9999; max-width:400px;';
           errorDiv.innerHTML = `<strong>Application Error:</strong><br>${error.message}`;
           document.body.appendChild(errorDiv);
-          
-          // Remove error message after 10 seconds
-          setTimeout(() => {
-            if (errorDiv.parentNode) {
-              errorDiv.parentNode.removeChild(errorDiv);
-            }
-          }, 10000);
+          setTimeout(() => errorDiv.remove(), 10000);
         }
       });
-
 
     </script>
 
