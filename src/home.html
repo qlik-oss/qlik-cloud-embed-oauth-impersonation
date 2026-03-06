@@ -381,7 +381,7 @@
         dropdown.selectedIndex = selectedIndex;
 
         dropdown.addEventListener("change", function () {
-          sheetEmbed.setAttribute("object-id", dropdown.options[dropdown.selectedIndex].value);
+          sheetEmbed.setAttribute("sheet-id", dropdown.options[dropdown.selectedIndex].value);
         });
       }
 

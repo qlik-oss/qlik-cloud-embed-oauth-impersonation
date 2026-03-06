@@ -98,9 +98,9 @@ test.describe('Qlik Content Verification', () => {
       console.log(`Selecting sheet ${i + 1}/${sheetOptions.length}: "${optionText}"`);
       await page.locator('#sheetdrop').selectOption({ value: optionValue });
 
-      // The JS handler sets object-id on the embed when the dropdown changes
+      // The JS handler sets sheet-id on the embed when the dropdown changes
       await expect(
-        page.locator(`#sheet-nav qlik-embed[object-id="${optionValue}"]`)
+        page.locator(`#sheet-nav qlik-embed[sheet-id="${optionValue}"]`)
       ).toBeAttached({ timeout: 15000 });
 
       // Wait for the sheet to finish rendering (SVG elements appear inside the embed)
@@ -116,7 +116,7 @@ test.describe('Qlik Content Verification', () => {
     console.log('Navigating back to first sheet');
     await page.locator('#sheetdrop').selectOption({ value: firstValue });
     await expect(
-      page.locator(`#sheet-nav qlik-embed[object-id="${firstValue}"]`)
+      page.locator(`#sheet-nav qlik-embed[sheet-id="${firstValue}"]`)
     ).toBeAttached({ timeout: 15000 });
     await page.locator('#sheet-nav qlik-embed[ui="analytics/sheet"] svg').first().waitFor({
       state: 'attached',
@@ -193,10 +193,10 @@ test.describe('Qlik Content Verification', () => {
     console.log('PASS: Initial sheet content loaded');
 
     await page.locator('#sheetdrop').selectOption({ label: 'Sales Analysis' });
-    // Wait for the sheet embed to update its object-id, then verify SVG renders
+    // Wait for the sheet embed to update its sheet-id, then verify SVG renders
     const salesAnalysisValue = await page.locator('#sheetdrop option', { hasText: 'Sales Analysis' }).getAttribute('value');
     await expect(
-      page.locator(`#sheet-nav qlik-embed[object-id="${salesAnalysisValue}"]`)
+      page.locator(`#sheet-nav qlik-embed[sheet-id="${salesAnalysisValue}"]`)
     ).toBeAttached({ timeout: 15000 });
     await page.locator('#sheet-nav qlik-embed[ui="analytics/sheet"] svg').first().waitFor({
       state: 'attached',
