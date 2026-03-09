@@ -150,3 +150,25 @@ html {
   box-sizing: border-box;
   margin-top: 50px;
 }
+
+/* Home tiles: wrap across rows while keeping readable card widths. */
+#featured-3 .home-tile-grid {
+  --bs-gutter-x: 0;
+  --bs-gutter-y: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin: 0;
+}
+
+#featured-3 .home-tile-grid > .col-sm-2 {
+  width: auto;
+  max-width: none;
+  min-width: 200px;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+#featured-3 .home-tile-grid .card {
+  height: 100%;
+}
