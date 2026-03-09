@@ -18,7 +18,7 @@ The goal of this project is to show how to easily deploy analytics & AI into you
 experience for your users, even when your web app or portal doesn't have a backend identity provider for users to authenticate to directly. This project leverages Qlik's qlik-embed, qlik/api, and OAuth machine-to-machine impersonation
 capabilities.
 
-<img src="src/img/screenshot.png" width="600" alt="Screenshot of resulting embedded app"/>
+<img src="docs/app-screenshot.png" width="600" alt="Screenshot of resulting embedded app"/>
 
 It showcases several embedding techniques, such as:
 
