@@ -85,6 +85,7 @@ const frontendParams = {
   objectId: process.env.OBJECT_ID,
   fieldId: process.env.FIELD_ID,
   assistantId: process.env.ASSISTANT_ID,
+  agenticAssistantId: process.env.AGENTIC_ASSISTANT_ID,
   hypercubeDimension: process.env.HYPERCUBE_DIMENSION,
   hypercubeMeasure: process.env.HYPERCUBE_MEASURE,
   masterDimension: process.env.MASTER_DIMENSION,

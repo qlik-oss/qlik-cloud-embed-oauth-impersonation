@@ -27,7 +27,8 @@ It showcases several embedding techniques, such as:
 - qlik-embed `classic/chart`: load legacy charts in a similar manner to `classic/app`
 - qlik-embed `analytics/chart`: lightweight charts in a similar manner to `analytics/sheet`
 - qlik-embed `analytics/chart` on-the-fly: lightweight charts generated on-the-fly (e.g. the chart doesn't need to be in the Qlik Sense app, it is defined in the web app instead)
-- qlik-embed `ai/assistant`: provides access to AI assistants in Qlik Answers
+- qlik-embed `ai/agentic-assistant`: provides access to the Qlik Answers agentic assistant that works across both structured and unstructured data
+- qlik-embed `ai/assistant` (legacy): provides access to the legacy unstructured AI assistants in Qlik Answers
 - qlik-embed `analytics/field`: lightweight way to render a list box containing dimension values
 - qlik-embed `analytics/selections`: lightweight way to render a full Qlik Sense selections bar
 - qlik-embed retrieval of hypercube data from an existing object
@@ -78,6 +79,9 @@ Alternatively, you can download and extract the project files.
 2. Provide `View` and `Can consume data` roles to all users in the tenant for the
    spaces containing the knowledgebase, assistant, and any data connections used
    by the knowledgebase.
+3. Note the assistant GUID — you can use it as either `AGENTIC_ASSISTANT_ID` (for
+   the agentic assistant UI `ai/agentic-assistant`) or `ASSISTANT_ID` (for the
+   legacy assistant UI `ai/assistant`), or both if you have separate assistants.
 
 ## Step 3. Set up environment variables
 
@@ -89,7 +93,8 @@ Alternatively, you can download and extract the project files.
     - `TENANT_URI`: enter the hostname of the Qlik Cloud tenant against which the app will run, such as
     `z29kgagw312sl0g.eu.qlikcloud.com`.
     - `APP_ID`: enter the app GUID for the Qlik Sense app you uploaded to your tenant (used for analytics/sheet, classic/app, analytics/chart and classic/chart examples).
-    - `ASSISTANT_ID`: enter the GUID of the Qlik Answers Assistant you wish to embed, or leave blank to omit this embedded UI.
+    - `AGENTIC_ASSISTANT_ID`: enter the GUID of the Qlik Answers agentic assistant for the `ai/agentic-assistant` UI, or leave blank to omit.
+    - `ASSISTANT_ID`: enter the GUID of the Qlik Answers Assistant you wish to embed with the legacy `ai/assistant` UI, or leave blank to omit.
 3. (Optional) If you are using an app other than the provided Qlik Sense application,
    configure the following:
     - `SHEET_ID`: a sheet ID from your app (used for the analytics/sheet and classic/app examples).

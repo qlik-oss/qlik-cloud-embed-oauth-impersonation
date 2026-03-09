@@ -60,9 +60,13 @@
                 <div class="sb-nav-link-icon"><i class="fas fa-chart-line"></i></div>
                 Lightweight chart
               </a>
+              <a class="nav-link" href="#agentic-assistant">
+                <div class="sb-nav-link-icon"><i class="fas fa-robot"></i></div>
+                Agentic Assistant
+              </a>
               <a class="nav-link" href="#ai-assistant">
                 <div class="sb-nav-link-icon"><i class="fas fa-chart-line"></i></div>
-                AI Assistant
+                AI Assistant (legacy)
               </a>
               <a class="nav-link" href="#on-the-fly">
                 <div class="sb-nav-link-icon"><i class="fas fa-chart-line"></i></div>
@@ -133,12 +137,24 @@
                       </div>
                     </div>
                     <div class="col-sm-2">
+                      <a class="nav-link" href="#agentic-assistant">
+                        <span class="link"></span>
+                      </a>
+                      <div class="card border-primary">
+                        <div class="card-body">
+                          <h5 class="card-title">Agentic Assistant</h5>
+                          <i class="fas fa-robot lock-icon"></i>
+                          <p class="card-text">Agentic AI assistant across structured and unstructured data</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-sm-2">
                       <a class="nav-link" href="#ai-assistant">
                         <span class="link"></span>
                       </a>
                       <div class="card border-primary">
                         <div class="card-body">
-                          <h5 class="card-title">AI Assistant</h5>
+                          <h5 class="card-title">AI Assistant (legacy)</h5>
                           <i class="fas fa-chart-line lock-icon"></i>
                           <p class="card-text">Provide access to an AI assistant in Qlik Answers</p>
                         </div>
@@ -222,8 +238,13 @@
                 <div class="embed-viz"></div>
               </div>
 
+              <div id="agentic-assistant" class="container content-item" style="display: none;">
+                <h1>Agentic Assistant (ai/agentic-assistant)</h1>
+                <div class="embed-ai"></div>
+              </div>
+
               <div id="ai-assistant" class="container content-item" style="display: none;">
-                <h1>AI Assistant (ai/assistant)</h1>
+                <h1>AI Assistant — legacy (ai/assistant)</h1>
                 <div class="embed-ai"></div>
               </div>
 
@@ -422,7 +443,29 @@
           createEmbed({ ui: 'analytics/chart', preview: 'true', 'app-id': configParams.appId, 'object-id': configParams.objectId })
         );
 
-        // ai/assistant: only render if an assistant ID is configured in the environment
+        // ai/agentic-assistant: only render if an agentic assistant ID is configured in the environment
+        if (configParams.agenticAssistantId) {
+          const agenticContainer = document.querySelector('#agentic-assistant .embed-ai');
+          const agenticLoadingMsg = document.createElement('div');
+          agenticLoadingMsg.id = 'agentic-assistant-loading';
+          agenticLoadingMsg.textContent = 'Loading Agentic Assistant...';
+          agenticLoadingMsg.style.cssText = 'padding:20px; text-align:center; font-size:16px;';
+          agenticContainer.appendChild(agenticLoadingMsg);
+
+          const agenticEmbed = createEmbed({ ui: 'ai/agentic-assistant', 'assistant-id': configParams.agenticAssistantId });
+          agenticEmbed.style.display = 'none';
+          agenticContainer.appendChild(agenticEmbed);
+
+          setTimeout(() => {
+            document.getElementById('agentic-assistant-loading')?.remove();
+            agenticEmbed.style.display = 'block';
+          }, 2000);
+        } else {
+          document.querySelector('#agentic-assistant .embed-ai').textContent =
+            'No Agentic Assistant configured. Set AGENTIC_ASSISTANT_ID in your .env file to enable this section.';
+        }
+
+        // ai/assistant (legacy): only render if an assistant ID is configured in the environment
         if (configParams.assistantId) {
           const aiContainer = document.querySelector('#ai-assistant .embed-ai');
           const loadingMsg = document.createElement('div');

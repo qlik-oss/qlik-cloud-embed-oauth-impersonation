@@ -49,7 +49,8 @@ test.describe('Core App Functionality', () => {
     const sections = [
       { href: '#sheet-nav', name: 'Lightweight Sheet' },
       { href: '#analytics-chart', name: 'Lightweight Chart' },
-      { href: '#ai-assistant', name: 'AI Assistant' },
+      { href: '#agentic-assistant', name: 'Agentic Assistant' },
+      { href: '#ai-assistant', name: 'AI Assistant (legacy)' },
       { href: '#on-the-fly', name: 'On-the-fly Chart' },
       { href: '#analytics-chart-data', name: 'Raw Dataset' },
       { href: '#field', name: 'Filterable Field' },
