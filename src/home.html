@@ -12,7 +12,6 @@
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="css/styles.css" rel="stylesheet" />
     <link href="css/qlik-embed-style.css" rel="stylesheet" />
-    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="js/script.js"></script>
   </head>
 
@@ -25,14 +24,14 @@
         <div class="input-group">
           <input class="form-control" type="text" placeholder="Search for..." aria-label="Search for..."
             aria-describedby="btnNavbarSearch" />
-          <button class="btn btn-custom" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
+          <button class="btn btn-custom" id="btnNavbarSearch" type="button"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-search"></use></svg></button>
         </div>
       </form>
       <!-- Navbar-->
       <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
-            aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+            aria-expanded="false"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-user"></use></svg></a>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
             <li><a class="dropdown-item" href="/logout">Logout</a></li>
           </ul>
@@ -43,50 +42,49 @@
       <div id="layoutSidenav_nav">
         <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
           <div class="sb-sidenav-menu">
-            <img src="/img/company-logo.svg" width="60%" style="aspect-ratio: 1/1; object-fit: contain;" class="centerImage">
+            <img src="/img/company-logo.png" width="60%" style="aspect-ratio: 1/1; object-fit: contain;" class="centerImage">
             <div class="nav">
               <a class="nav-link" href="#home">
-                <div class="sb-nav-link-icon"><i class="fas fa-house"></i></div>
+                <div class="sb-nav-link-icon"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-home"></use></svg></div>
                 Home
               </a>
               <hr class="sidebar-divider">
-              <br>
               <div class="sb-sidenav-menu-heading">Embeddable UIs</div>
-              <a class="nav-link" href="#sheet-nav">
-                <div class="sb-nav-link-icon"><i class="fas fa-sheet-plastic"></i></div>
-                Lightweight sheet
-              </a>
-              <a class="nav-link" href="#analytics-chart">
-                <div class="sb-nav-link-icon"><i class="fas fa-chart-line"></i></div>
-                Lightweight chart
-              </a>
               <a class="nav-link" href="#agentic-assistant">
-                <div class="sb-nav-link-icon"><i class="fas fa-robot"></i></div>
+                <div class="sb-nav-link-icon"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-sparkles"></use></svg></div>
                 Agentic Assistant
               </a>
               <a class="nav-link" href="#ai-assistant">
-                <div class="sb-nav-link-icon"><i class="fas fa-chart-line"></i></div>
-                AI Assistant (legacy)
+                <div class="sb-nav-link-icon"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-sparkles"></use></svg></div>
+                Legacy AI Assistant
               </a>
-              <a class="nav-link" href="#on-the-fly">
-                <div class="sb-nav-link-icon"><i class="fas fa-chart-line"></i></div>
-                On-the-fly chart
-              </a>
-              <a class="nav-link" href="#analytics-chart-data">
-                <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
-                Raw dataset
-              </a>
-              <a class="nav-link" href="#field">
-                <div class="sb-nav-link-icon"><i class="fas fa-filter"></i></div>
-                Filterable field
+              <a class="nav-link" href="#sheet-nav">
+                <div class="sb-nav-link-icon"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-sheet"></use></svg></div>
+                Lightweight sheet
               </a>
               <a class="nav-link" href="#classic-app">
-                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                <div class="sb-nav-link-icon"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-full-ui"></use></svg></div>
                 Full Qlik Sense
               </a>
+              <a class="nav-link" href="#analytics-chart">
+                <div class="sb-nav-link-icon"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-chart"></use></svg></div>
+                Lightweight chart
+              </a>
+              <a class="nav-link" href="#on-the-fly">
+                <div class="sb-nav-link-icon"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-chart"></use></svg></div>
+                On-the-fly chart
+              </a>
               <a class="nav-link" href="#classic-chart">
-                <div class="sb-nav-link-icon"><i class="fas fa-backward"></i></div>
-                Legacy charts
+                <div class="sb-nav-link-icon"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-chart"></use></svg></div>
+                Legacy chart
+              </a>
+              <a class="nav-link" href="#field">
+                <div class="sb-nav-link-icon"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-filter"></use></svg></div>
+                Filterable field
+              </a>
+              <a class="nav-link" href="#analytics-chart-data">
+                <div class="sb-nav-link-icon"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-table"></use></svg></div>
+                Raw dataset
               </a>
               <!-- Divider -->
               <hr class="sidebar-divider">
@@ -112,30 +110,6 @@
                       compatibility</a>.</p>
                   <br>
                   <div class="row justify-content-center home-tile-grid">
-                    <div class="col-sm-2 ">
-                      <a class="nav-link" href="#sheet-nav">
-                        <span class="link"></span>
-                      </a>
-                      <div class="card border-primary ">
-                        <div class="card-body">
-                          <h5 class="card-title">Lightweight Sheet</h5>
-                          <i class="fas fa-sheet-plastic lock-icon"></i>
-                          <p class="card-text">Display quick-to-render sheets</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-sm-2">
-                      <a class="nav-link" href="#analytics-chart">
-                        <span class="link"></span>
-                      </a>
-                      <div class="card border-primary">
-                        <div class="card-body">
-                          <h5 class="card-title">Lightweight Chart</h5>
-                          <i class="fas fa-chart-line lock-icon"></i>
-                          <p class="card-text">Display quick-to-render single chart/objects</p>
-                        </div>
-                      </div>
-                    </div>
                     <div class="col-sm-2">
                       <a class="nav-link" href="#agentic-assistant">
                         <span class="link"></span>
@@ -143,7 +117,7 @@
                       <div class="card border-primary">
                         <div class="card-body">
                           <h5 class="card-title">Agentic Assistant</h5>
-                          <i class="fas fa-robot lock-icon"></i>
+                          <svg class="app-icon lock-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-sparkles"></use></svg>
                           <p class="card-text">Agentic AI assistant across structured and unstructured data</p>
                         </div>
                       </div>
@@ -154,45 +128,21 @@
                       </a>
                       <div class="card border-primary">
                         <div class="card-body">
-                          <h5 class="card-title">AI Assistant (legacy)</h5>
-                          <i class="fas fa-chart-line lock-icon"></i>
+                          <h5 class="card-title">Legacy AI Assistant</h5>
+                          <svg class="app-icon lock-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-sparkles"></use></svg>
                           <p class="card-text">Provide access to an AI assistant in Qlik Answers</p>
                         </div>
                       </div>
                     </div>
-                    <div class="col-sm-2">
-                      <a class="nav-link" href="#on-the-fly">
+                    <div class="col-sm-2 ">
+                      <a class="nav-link" href="#sheet-nav">
                         <span class="link"></span>
                       </a>
-                      <div class="card border-primary">
+                      <div class="card border-primary ">
                         <div class="card-body">
-                          <h5 class="card-title">On-the-fly chart</h5>
-                          <i class="fas fa-chart-line lock-icon"></i>
-                          <p class="card-text">Display quick-to-render temporary charts</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-sm-2">
-                      <a class="nav-link" href="#analytics-chart-data">
-                        <span class="link"></span>
-                      </a>
-                      <div class="card border-primary">
-                        <div class="card-body">
-                          <h5 class="card-title">Just the data</h5>
-                          <i class="fas fa-table lock-icon"></i>
-                          <p class="card-text">Return raw datasets from the app model</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-sm-2">
-                      <a class="nav-link" href="#field">
-                        <span class="link"></span>
-                      </a>
-                      <div class="card border-primary">
-                        <div class="card-body">
-                          <h5 class="card-title">Field selection filter</h5>
-                          <i class="fas fa-filter lock-icon"></i>
-                          <p class="card-text">Display quick-to-render filterable value lists</p>
+                          <h5 class="card-title">Lightweight Sheet</h5>
+                          <svg class="app-icon lock-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-sheet"></use></svg>
+                          <p class="card-text">Display quick-to-render sheets</p>
                         </div>
                       </div>
                     </div>
@@ -203,8 +153,32 @@
                       <div class="card border-primary">
                         <div class="card-body">
                           <h5 class="card-title">Classic App</h5>
-                          <i class="fas fa-tachometer-alt lock-icon"></i>
+                          <svg class="app-icon lock-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-full-ui"></use></svg>
                           <p class="card-text">Provide rich access to the Qlik Sense experience</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-sm-2">
+                      <a class="nav-link" href="#analytics-chart">
+                        <span class="link"></span>
+                      </a>
+                      <div class="card border-primary">
+                        <div class="card-body">
+                          <h5 class="card-title">Lightweight Chart</h5>
+                          <svg class="app-icon lock-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-chart"></use></svg>
+                          <p class="card-text">Display quick-to-render single chart/objects</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-sm-2">
+                      <a class="nav-link" href="#on-the-fly">
+                        <span class="link"></span>
+                      </a>
+                      <div class="card border-primary">
+                        <div class="card-body">
+                          <h5 class="card-title">On-the-fly chart</h5>
+                          <svg class="app-icon lock-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-chart"></use></svg>
+                          <p class="card-text">Display quick-to-render temporary charts</p>
                         </div>
                       </div>
                     </div>
@@ -212,11 +186,35 @@
                       <a class="nav-link" href="#classic-chart">
                         <span class="link"></span>
                       </a>
-                      <div class="card border-primary ">
+                      <div class="card border-primary">
                         <div class="card-body">
-                          <h5 class="card-title">Classic Chart</h5>
-                          <i class="fas fa-backward lock-icon"></i>
+                          <h5 class="card-title">Legacy chart</h5>
+                          <svg class="app-icon lock-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-chart"></use></svg>
                           <p class="card-text">Embed legacy charts and extensions</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-sm-2">
+                      <a class="nav-link" href="#field">
+                        <span class="link"></span>
+                      </a>
+                      <div class="card border-primary">
+                        <div class="card-body">
+                          <h5 class="card-title">Field selection filter</h5>
+                          <svg class="app-icon lock-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-filter"></use></svg>
+                          <p class="card-text">Display quick-to-render filterable value lists</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-sm-2">
+                      <a class="nav-link" href="#analytics-chart-data">
+                        <span class="link"></span>
+                      </a>
+                      <div class="card border-primary">
+                        <div class="card-body">
+                          <h5 class="card-title">Just the data</h5>
+                          <svg class="app-icon lock-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-table"></use></svg>
+                          <p class="card-text">Return raw datasets from the app model</p>
                         </div>
                       </div>
                     </div>
@@ -240,7 +238,7 @@
               </div>
 
               <div id="ai-assistant" class="container content-item" style="display: none;">
-                <h1>AI Assistant — legacy (ai/assistant)</h1>
+                <h1>Legacy AI Assistant (ai/assistant)</h1>
                 <div class="embed-ai-legacy"></div>
               </div>
 
@@ -278,7 +276,7 @@
               </div>
 
               <div id="classic-chart" class="container content-item" style="display: none;">
-                <h1>Legacy charts (classic/chart)</h1>
+                <h1>Legacy chart (classic/chart)</h1>
                 <div class="embed-classic"></div>
               </div>
 
@@ -290,9 +288,12 @@
             <div class="d-flex align-items-center justify-content-between small">
               <div class="text-muted">Copyright &copy; My Company <span id="footer-year"></span></div>
               <div>
+                <!--
                 <a href="#">Privacy Policy</a>
                 &middot;
                 <a href="#">Terms &amp; Conditions</a>
+                -->
+                <a href="https://github.com/qlik-oss/qlik-cloud-embed-oauth-impersonation" target="_blank">See the code on GitHub</a>
               </div>
             </div>
           </div>

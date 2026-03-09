@@ -1,5 +1,27 @@
 /* Embed containers — size is set here; qlik-embed fills 100% of its container */
 
+.app-icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  vertical-align: -0.125em;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sb-nav-link-icon .app-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.lock-icon.app-icon {
+  width: 40px;
+  height: 40px;
+}
+
 .embed-viz {
   width: 600px;
   height: 600px;
@@ -118,12 +140,12 @@ qlik-embed {
 
 .viz-selector {
   width: 250px;
-  padding: 16px;
+  padding-bottom: 16px;
 }
 
 .app-selector {
   width: 100%;
-  padding: 16px;
+  padding-bottom: 16px;
 }
 
 /* Page layout */
