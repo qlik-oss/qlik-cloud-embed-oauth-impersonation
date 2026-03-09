@@ -220,6 +220,7 @@
                         </div>
                       </div>
                     </div>
+                  </div>
                 </div>
               </div>
 
@@ -235,12 +236,12 @@
 
               <div id="agentic-assistant" class="container content-item" style="display: none;">
                 <h1>Agentic Assistant (ai/agentic-assistant)</h1>
-                <div class="embed-ai"></div>
+                <div class="embed-ai-agentic"></div>
               </div>
 
               <div id="ai-assistant" class="container content-item" style="display: none;">
                 <h1>AI Assistant — legacy (ai/assistant)</h1>
-                <div class="embed-ai"></div>
+                <div class="embed-ai-legacy"></div>
               </div>
 
               <div id="on-the-fly" class="container content-item" style="display: none;">
@@ -440,7 +441,7 @@
 
         // ai/agentic-assistant: only render if an agentic assistant ID is configured in the environment
         if (configParams.agenticAssistantId) {
-          const agenticContainer = document.querySelector('#agentic-assistant .embed-ai');
+          const agenticContainer = document.querySelector('#agentic-assistant .embed-ai-agentic');
           const agenticLoadingMsg = document.createElement('div');
           agenticLoadingMsg.id = 'agentic-assistant-loading';
           agenticLoadingMsg.textContent = 'Loading Agentic Assistant...';
@@ -456,13 +457,13 @@
             agenticEmbed.style.display = 'block';
           }, 2000);
         } else {
-          document.querySelector('#agentic-assistant .embed-ai').textContent =
+          document.querySelector('#agentic-assistant .embed-ai-agentic').textContent =
             'No Agentic Assistant configured. Set AGENTIC_ASSISTANT_ID in your .env file to enable this section.';
         }
 
         // ai/assistant (legacy): only render if an assistant ID is configured in the environment
         if (configParams.assistantId) {
-          const aiContainer = document.querySelector('#ai-assistant .embed-ai');
+          const aiContainer = document.querySelector('#ai-assistant .embed-ai-legacy');
           const loadingMsg = document.createElement('div');
           loadingMsg.id = 'ai-assistant-loading';
           loadingMsg.textContent = 'Loading AI Assistant...';
@@ -478,7 +479,7 @@
             aiEmbed.style.display = 'block';
           }, 2000);
         } else {
-          document.querySelector('#ai-assistant .embed-ai').textContent =
+          document.querySelector('#ai-assistant .embed-ai-legacy').textContent =
             'No AI Assistant configured. Set ASSISTANT_ID in your .env file to enable this section.';
         }
 

@@ -3,38 +3,39 @@
 .embed-viz {
   width: 600px;
   height: 600px;
-  padding: 16px;
-  border: 1px solid #bbb;
-  border-radius: 3px;
-  box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
   position: relative;
 }
 
-.embed-ai {
-  width: 100%;
-  height: 600px;
-  padding: 16px;
-  border: 1px solid #bbb;
-  border-radius: 3px;
-  box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
+.embed-ai-legacy,
+.embed-ai-agentic {
   position: relative;
+}
+
+.embed-ai-legacy {
+  width: 100%;
+  height: auto;
+  min-height: 600px;
+}
+
+.embed-ai-agentic {
+  width: 100%;
+  height: auto;
+  min-width: 350px;
+  min-height: 500px;
+  max-width: 100%;
+  overflow: visible;
+  display: block;
+  padding: 0;
 }
 
 .embed-data {
   width: 600px;
-  padding: 16px;
-  border: 1px solid #bbb;
-  border-radius: 3px;
-  box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
   position: relative;
 }
 
 .embed-classic {
   height: 800px;
-  border: 1px solid #bbb;
   flex: 2 0 auto;
-  border-radius: 3px;
-  box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
   position: relative;
   box-sizing: border-box;
   overflow: auto;
@@ -43,8 +44,6 @@
 .embed-selections {
   min-height: 42px;
   flex: 2 0 auto;
-  border: 1px solid #bbb;
-  box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
   position: relative;
   box-sizing: border-box;
 }
@@ -54,6 +53,22 @@ qlik-embed {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.embed-ai-legacy qlik-embed {
+  height: auto;
+}
+
+.embed-ai-agentic qlik-embed {
+  width: 100%;
+  height: clamp(500px, 75vh, 900px);
+  min-width: 350px;
+  min-height: 500px;
+  max-width: 100%;
+  position: relative;
+  top: 0;
+  left: 0;
+  margin: 0;
 }
 
 #chart-data table {
