@@ -42,12 +42,21 @@ test.describe('Qlik Content Verification', () => {
       { href: '#classic-chart',      selector: 'qlik-embed[ui="classic/chart"]',                    name: 'Legacy Charts' },
     ];
 
-    // AI assistant may not be configured; accept either the embed or the "not configured" message
+    // AI assistants may not be configured; accept either the embed or the "not configured" message
+
+    // Agentic Assistant (ai/agentic-assistant)
+    await page.click('a[href="#agentic-assistant"]');
+    await expect(page.locator('#agentic-assistant')).toBeVisible();
+    const agenticLocator = page.locator('qlik-embed[ui="ai/agentic-assistant"], #agentic-assistant .embed-ai');
+    await expect(agenticLocator.first()).toBeAttached({ timeout: 15000 });
+    console.log('PASS: Agentic Assistant section present');
+
+    // AI Assistant — legacy (ai/assistant)
     await page.click('a[href="#ai-assistant"]');
     await expect(page.locator('#ai-assistant')).toBeVisible();
     const aiLocator = page.locator('qlik-embed[ui="ai/assistant"], #ai-assistant .embed-ai');
     await expect(aiLocator.first()).toBeAttached({ timeout: 15000 });
-    console.log('PASS: AI Assistant section present');
+    console.log('PASS: AI Assistant (legacy) section present');
 
     for (const section of sections) {
       console.log(`Checking ${section.name}...`);
