@@ -211,10 +211,10 @@ async function getQlikUser(userEmail) {
   }
 }
 
-// Redirect unauthenticated requests to the login page
+// Reject unauthenticated API requests with 401 so the client can redirect to login
 function requireAuth(req, res, next) {
   if (!req.session.userId) {
-    return res.redirect("/login");
+    return res.status(401).json({ error: "session_expired" });
   }
   next();
 }
