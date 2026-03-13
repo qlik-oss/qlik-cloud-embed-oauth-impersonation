@@ -246,7 +246,7 @@ app.post("/access-token", [requireAuth, csrfProtection], async (req, res) => {
     res.send(accessToken);
   } catch (err) {
     console.error("Token error:", err);
-    res.status(401).send("Authentication error");
+    res.status(401).json({ error: "authentication_error", message: "Unable to mint access token" });
   }
 });
 

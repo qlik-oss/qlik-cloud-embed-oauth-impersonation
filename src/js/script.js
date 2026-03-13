@@ -2,7 +2,9 @@
 function handleSessionExpired(response) {
   if (response.status === 401) {
     window.location.href = "/login";
-    throw new Error("Session expired");
+    const err = new Error("Session expired");
+    err.status = 401;
+    throw err;
   }
 }
 
