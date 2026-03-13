@@ -1,3 +1,13 @@
+// Redirect to login when the server session has expired (401)
+function handleSessionExpired(response) {
+  if (response.status === 401) {
+    window.location.href = "/login";
+    const err = new Error("Session expired");
+    err.status = 401;
+    throw err;
+  }
+}
+
 // Get CSRF token from the server
 async function getCsrfToken() {
   try {
@@ -26,7 +36,8 @@ async function getAccessToken() {
         'CSRF-Token': csrfToken
       }
     });
-    
+
+    handleSessionExpired(response);
     if (response.status === 200) {
       return response.text();
     }
@@ -51,6 +62,7 @@ async function getSheets() {
       mode: "same-origin",
       redirect: "follow",
     });
+    handleSessionExpired(response);
     if (response.status === 200) {
       return response.json();
     }
@@ -74,6 +86,7 @@ async function getHypercube() {
       mode: "same-origin",
       redirect: "follow",
     });
+    handleSessionExpired(response);
     if (response.status === 200) {
       return response.json();
     }
@@ -102,7 +115,8 @@ async function getConfigParameter() {
       mode: "same-origin",
       redirect: "follow"
     });
-    
+
+    handleSessionExpired(response);
     if (response.status === 200) {
       return response.json();
     }

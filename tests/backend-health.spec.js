@@ -243,3 +243,35 @@ test.describe('Backend Health & Diagnostics', () => {
     console.log(`   First measure:   "${data.returnedMeasure[0]}"`);
   });
 });
+
+// ── Unauthenticated 401 contract tests ──────────────────────────────────────
+// Verify that protected API endpoints return 401 JSON (not a 302 redirect)
+// when called without a session.
+
+test.describe('Unauthenticated API — 401 contract', () => {
+  test.describe.configure({ mode: 'parallel' });
+
+  test.beforeEach(async ({ browserName }) => {
+    test.skip(browserName !== 'chromium', 'API-only tests — chromium only');
+  });
+
+  const protectedEndpoints = [
+    { method: 'GET',  path: '/app-sheets' },
+    { method: 'GET',  path: '/hypercube' },
+    { method: 'POST', path: '/access-token' },
+    { method: 'POST', path: '/config' },
+  ];
+
+  for (const { method, path } of protectedEndpoints) {
+    test(`${method} ${path} returns 401 JSON without session`, async ({ request }) => {
+      const res = method === 'GET'
+        ? await request.get(path, { maxRedirects: 0 })
+        : await request.post(path, { maxRedirects: 0 });
+
+      expect(res.status(), `${method} ${path} should return 401, got ${res.status()}`).toBe(401);
+
+      const body = await res.json();
+      expect(body.error, 'Response body should include an error field').toBe('session_expired');
+    });
+  }
+});

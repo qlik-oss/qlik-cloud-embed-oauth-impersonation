@@ -650,12 +650,14 @@
 
           renderQlikEmbeds(configParams);
 
-          // Wrap getAccessToken to trigger embed health checks on token failures
+          // Wrap getAccessToken to trigger embed health checks on transient failures
+          // but skip the refresh loop when the session has expired (401 redirects to login)
           const _origGetAccessToken = window.getAccessToken;
           window.getAccessToken = async function getAccessToken() {
             try {
               return await _origGetAccessToken();
             } catch (err) {
+              if (err.status === 401) throw err;
               checkAndRefreshEmbeds();
               throw err;
             }
