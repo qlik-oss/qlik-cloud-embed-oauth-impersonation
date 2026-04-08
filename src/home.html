@@ -9,7 +9,6 @@
     <meta name="author" content="" />
     <title>My Company</title>
     <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon" />
-    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="css/styles.css" rel="stylesheet" />
     <link href="css/qlik-embed-style.css" rel="stylesheet" />
     <script src="js/script.js"></script>
@@ -33,6 +32,8 @@
           <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
             aria-expanded="false"><svg class="app-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-user"></use></svg></a>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+            <li><span class="dropdown-item-text text-muted small" id="user-email"></span></li>
+            <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="/logout">Logout</a></li>
           </ul>
         </li>
@@ -152,7 +153,7 @@
                       </a>
                       <div class="card border-primary">
                         <div class="card-body">
-                          <h5 class="card-title">Classic App</h5>
+                          <h5 class="card-title">Full Qlik Sense</h5>
                           <svg class="app-icon lock-icon" aria-hidden="true"><use href="/img/app-icons.svg#icon-full-ui"></use></svg>
                           <p class="card-text">Provide rich access to the Qlik Sense experience</p>
                         </div>
@@ -257,7 +258,23 @@
 
               <div id="analytics-chart-data" class="container content-item" style="display: none;">
                 <h1>Direct access to data (qlik-api)</h1>
-                <div id="chart-data" class="embed-data"></div>
+                <div class="data-panel">
+                  <div class="data-panel-header">
+                    <div class="data-panel-info">
+                      <svg aria-hidden="true" style="width:16px;height:16px;flex-shrink:0;margin-top:2px;" viewBox="0 0 24 24" fill="none" stroke="#5a6872" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                      <span>This data is fetched via a server-side REST call. Selections made in other embedded charts update the engine session on the server, but won't appear here until you refresh.</span>
+                    </div>
+                    <div class="data-panel-actions">
+                      <span id="data-last-refreshed" class="data-timestamp"></span>
+                      <button id="refresh-data-btn" class="btn-refresh" type="button">
+                        <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                        <span class="refresh-label">Refresh data</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div id="data-session-user" class="data-session-badge" style="display:none;"></div>
+                  <div id="chart-data" class="embed-data"></div>
+                </div>
               </div>
 
               <div id="field" class="container content-item" style="display: none;">
@@ -305,6 +322,12 @@
 
     <script type="module">
 
+      import { qix } from "https://cdn.jsdelivr.net/npm/@qlik/api/index.js";
+
+      // @qlik/api app session — reuses the WebSocket opened by qlik-embed web components.
+      // Initialized after embeds load; used for keepalive pings.
+      let qixSession = null;
+
       // Show/hide page sections based on sidebar navigation clicks
       function addEventListeners() {
         const navLinks = document.querySelectorAll(".nav-link");
@@ -336,27 +359,40 @@
 
       // Fetch hypercube data from the backend and render it as an HTML table.
       async function updateTable() {
-        try {
-          const response = await getHypercube();
+        const btn = document.getElementById('refresh-data-btn');
+        const container = document.getElementById('chart-data');
+        const sessionBadge = document.getElementById('data-session-user');
+        const timestampEl = document.getElementById('data-last-refreshed');
 
-          const container = document.getElementById("chart-data");
+        btn.disabled = true;
+        btn.classList.add('is-loading');
+        btn.querySelector('.refresh-label').textContent = 'Refreshing…';
+
+        try {
+          const [response, userAttributes] = await Promise.all([
+            getHypercube(),
+            getUserAttributes(),
+          ]);
+
           container.innerHTML = '';
 
-          const table = document.createElement("table");
-          table.classList.add("table", "table-striped", "table-bordered");
+          sessionBadge.innerHTML = `<span class="badge-label">User information:</span> ${userAttributes.qlikUserId} (user ID: ${userAttributes.sessionUserId})`;
+          sessionBadge.style.display = 'flex';
 
-          const thead = document.createElement("thead");
-          const headerRow = document.createElement("tr");
+          const table = document.createElement('table');
+
+          const thead = document.createElement('thead');
+          const headerRow = document.createElement('tr');
           Object.keys(response).forEach((key) => {
-            const th = document.createElement("th");
+            const th = document.createElement('th');
             th.textContent = key;
-            th.scope = "col";
+            th.scope = 'col';
             headerRow.appendChild(th);
           });
           thead.appendChild(headerRow);
           table.appendChild(thead);
 
-          const tbody = document.createElement("tbody");
+          const tbody = document.createElement('tbody');
           for (let i = 0; i < response.returnedDimension.length; i++) {
             const row = document.createElement('tr');
 
@@ -373,9 +409,16 @@
 
           table.appendChild(tbody);
           container.appendChild(table);
+
+          const now = new Date();
+          timestampEl.textContent = `Updated ${now.toLocaleTimeString()}`;
         } catch (error) {
-          console.error("Error updating table:", error);
-          document.getElementById("chart-data").textContent = "Error loading data: " + error.message;
+          console.error('Error updating table:', error);
+          container.innerHTML = `<p style="color:#c0392b;padding-top:14px;">Failed to load data: ${error.message}</p>`;
+        } finally {
+          btn.disabled = false;
+          btn.classList.remove('is-loading');
+          btn.querySelector('.refresh-label').textContent = 'Refresh data';
         }
       }
 
@@ -522,46 +565,20 @@
         );
       }
 
-      // Probe each non-ai embed's engine session and refresh any that are unresponsive
-      async function checkAndRefreshEmbeds() {
+      // Refresh all non-AI embeds (they share one WebSocket, so all are affected)
+      function refreshAllEmbeds() {
         for (const embed of getNonAiEmbeds()) {
-          const ui = embed.getAttribute('ui') || embed.getAttribute('id') || 'unknown';
-          try {
-            const refApi = await withTimeout(embed.getRefApi(), 5000);
-            const doc = await withTimeout(
-              refApi?.getDoc?.() ?? Promise.reject(new Error('getDoc not available')),
-              5000
-            );
-            await withTimeout(doc.getAppProperties(), 5000);
-          } catch {
-            console.warn(`[HealthCheck] [${ui}] embed is unresponsive — refreshing`);
-            showRefreshOverlay(embed);
-          }
+          showRefreshOverlay(embed);
         }
-      }
-
-      // Register fatalerror/error listeners on a qlik-embed element to trigger health checks
-      function attachEmbedErrorListener(embedEl) {
-        if (embedEl.getAttribute('ui')?.startsWith('ai/')) return;
-        const ui = embedEl.getAttribute('ui') || embedEl.getAttribute('id') || 'unknown';
-        embedEl.addEventListener('fatalerror', (evt) => {
-          console.error(`[EmbedError] [${ui}] fatalerror event fired:`, evt);
-          checkAndRefreshEmbeds();
-        });
-        embedEl.addEventListener('error', (evt) => {
-          console.error(`[EmbedError] [${ui}] error event fired:`, evt);
-          checkAndRefreshEmbeds();
-        });
       }
 
       // Display a "Reconnecting…" overlay over the embed, then auto-refresh after 1.5 s
       function showRefreshOverlay(embedEl) {
-        if (embedEl.getAttribute('ui')?.startsWith('ai/')) return;
         const container = embedEl.parentElement;
         if (!container || container.querySelector('.session-error-overlay')) return;
 
         const ui = embedEl.getAttribute('ui') || embedEl.getAttribute('id') || 'unknown';
-        console.log(`[EmbedError] [${ui}] Showing reconnecting overlay, will auto-refresh in 1.5s`);
+        console.log(`[EmbedRefresh] [${ui}] Showing reconnecting overlay, will auto-refresh in 1.5s`);
 
         const overlay = document.createElement('div');
         overlay.className = 'session-error-overlay';
@@ -572,7 +589,7 @@
       }
 
       // Remove the old qlik-embed element and replace it with a fresh one
-      async function refreshEmbed(embedEl, overlay) {
+      function refreshEmbed(embedEl, overlay) {
         const ui = embedEl.getAttribute('ui') || embedEl.getAttribute('id') || 'unknown';
         console.log(`[EmbedRefresh] [${ui}] Removing overlay and re-creating embed element`);
         overlay.remove();
@@ -580,20 +597,22 @@
         const attrs = Object.fromEntries(Array.from(embedEl.attributes).map(a => [a.name, a.value]));
         embedEl.remove();
         const newEmbed = createEmbed(attrs);
-        attachEmbedErrorListener(newEmbed);
         container.appendChild(newEmbed);
         console.log(`[EmbedRefresh] [${ui}] New embed element appended to DOM`);
       }
 
-      // Global WebSocket event handler registered via data-on-websocket-event
-      // Triggers embed health checks on closed or error events
+      // Global WebSocket event handler registered via data-on-websocket-event.
+      // Only triggers embed recovery for close code 4001 (QlikIdleTimeout).
       window.onQlikWebSocketEvent = function onQlikWebSocketEvent(event) {
         if (event.type === 'closed') {
-          console.warn('[WebSocket] Connection CLOSED — checking all embeds', event);
-          checkAndRefreshEmbeds();
+          const code = event.code ?? event.detail?.code;
+          console.warn(`[WebSocket] Connection CLOSED (code: ${code})`, event);
+          if (code === 4001) {
+            console.warn('[WebSocket] Session idle timeout (4001) — refreshing all embeds');
+            refreshAllEmbeds();
+          }
         } else if (event.type === 'error') {
-          console.error('[WebSocket] Connection ERROR — checking all embeds', event);
-          checkAndRefreshEmbeds();
+          console.error('[WebSocket] Connection ERROR (no recovery action)', event);
         } else {
           console.log('[WebSocket]', event.type, event);
         }
@@ -607,21 +626,14 @@
         ]);
       }
 
-      // Ping the first analytics/* embed every 2 minutes via createSessionObject/destroySessionObject
-      // to keep the shared engine WebSocket alive
+      // Ping the engine every 2 minutes via @qlik/api to prevent idle timeout (4001).
+      // On failure, logs the error. @qlik/api auto-reconnect handles transient failures;
+      // if the session is truly dead, the 4001 WebSocket close event triggers recovery.
       function setupKeepAlive() {
         setInterval(async () => {
-          const embed = document.querySelector('qlik-embed[ui^="analytics/"]');
-          if (!embed) return;
-
-          const ui = embed.getAttribute('ui');
+          if (!qixSession) return;
           try {
-            const refApi = await withTimeout(embed.getRefApi(), 10000);
-            const doc = await withTimeout(
-              refApi?.getDoc?.() ?? Promise.reject(new Error('getDoc not available')),
-              10000
-            );
-
+            const doc = await withTimeout(qixSession.getDoc(), 10000);
             const tempObj = await withTimeout(doc.createSessionObject({
               qInfo: { qType: 'keepalive-ping' },
             }), 10000);
@@ -630,14 +642,12 @@
               await withTimeout(doc.destroySessionObject(handle), 10000);
             }
           } catch (err) {
-            console.warn(`[KeepAlive] [${ui}] Engine ping FAILED:`, err?.message || err);
-            console.warn('[KeepAlive] Checking all embeds for failures');
-            checkAndRefreshEmbeds();
+            console.warn('[KeepAlive] Engine ping failed (auto-reconnect will retry):', err);
           }
         }, 2 * 60 * 1000);
       }
 
-      // Initialize the page: fetch config, render embeds, wire up error recovery, load data
+      // Initialize the page: fetch config, render embeds, set up keepalive, load data
       document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById('footer-year').textContent = new Date().getFullYear();
 
@@ -648,25 +658,21 @@
         try {
           const configParams = await getConfigParameter();
 
-          renderQlikEmbeds(configParams);
+          if (configParams.userEmail) {
+            document.getElementById('user-email').textContent = configParams.userEmail;
+          }
 
-          // Wrap getAccessToken to trigger embed health checks on transient failures
-          // but skip the refresh loop when the session has expired (401 redirects to login)
-          const _origGetAccessToken = window.getAccessToken;
-          window.getAccessToken = async function getAccessToken() {
-            try {
-              return await _origGetAccessToken();
-            } catch (err) {
-              if (err.status === 401) throw err;
-              checkAndRefreshEmbeds();
-              throw err;
-            }
-          };
+          renderQlikEmbeds(configParams);
 
           updateHeaders(configParams);
 
-          document.querySelectorAll('qlik-embed').forEach(attachEmbedErrorListener);
+          // Open a @qlik/api session that reuses the qlik-embed WebSocket connection.
+          // Actual connection happens lazily on first getDoc() call (keepalive ping).
+          qixSession = qix.openAppSession({ appId: configParams.appId });
+
           setupKeepAlive();
+
+          document.getElementById('refresh-data-btn').addEventListener('click', () => updateTable());
 
           await Promise.allSettled([
             updateSheetsList(configParams),

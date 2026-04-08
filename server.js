@@ -139,11 +139,14 @@ const csrfProtection = csrf({
   cookie: true 
 });
 
-// Open a QIX app session (cached internally by appId+hostConfig).
+// Open a QIX app session (since 2.6.0 doesn't need identity).
 function getQlikAppSession(userId) {
+  console.log("Getting QIX app session for userId", getFrontendHostConfig(userId).userId);
+  
   return openAppSession.openAppSession({
     appId: frontendParams.appId,
     hostConfig: getFrontendHostConfig(userId),
+    //identity: userId,
     withoutData: false,
   });
 }
@@ -250,8 +253,8 @@ app.post("/access-token", [requireAuth, csrfProtection], async (req, res) => {
   }
 });
 
-app.post("/config", [requireAuth, csrfProtection], (_req, res) => {
-  res.json(frontendParams);
+app.post("/config", [requireAuth, csrfProtection], (req, res) => {
+  res.json({ ...frontendParams, userEmail: req.session.email });
 });
 
 // Return the list of sheets in the Qlik app
@@ -317,6 +320,9 @@ app.get("/hypercube", requireAuth, async (req, res) => {
         data.push(...row[0].qMatrix);
       }
 
+      // Destroy the session object to avoid accumulation across requests
+      await app.destroySessionObject(model.id);
+
       // Transform data for front-end consumption
       return {
         returnedDimension: data.map(row => row[0].qText),
@@ -330,6 +336,46 @@ app.get("/hypercube", requireAuth, async (req, res) => {
     const statusCode = err.status || err.statusCode || 500;
     res.status(statusCode).json({
       error: "Unable to retrieve hypercube data",
+      code: err.code,
+      message: err.message,
+      enigmaError: err.enigmaError || false,
+      stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
+    });
+  }
+});
+
+// Return the authenticated Qlik user as seen from the current app session
+app.get("/user-attributes", requireAuth, async (req, res) => {
+  try {
+    const result = await withQlikDoc(req.session.userId, async (app) => {
+      const model = await app.createSessionObject({
+        qInfo: {
+          qType: "current-user-attributes",
+        },
+        qUserId: {
+          qStringExpression: {
+            qExpr: "=OSUser()",
+          },
+        },
+      });
+
+      const layout = await model.getLayout();
+
+      // Destroy the session object to avoid accumulation across requests
+      await app.destroySessionObject(model.id);
+
+      return {
+        sessionUserId: req.session.userId,
+        qlikUserId: layout.qUserId,
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error("User attributes error:", err);
+    const statusCode = err.status || err.statusCode || 500;
+    res.status(statusCode).json({
+      error: "Unable to retrieve user attributes",
       code: err.code,
       message: err.message,
       enigmaError: err.enigmaError || false,

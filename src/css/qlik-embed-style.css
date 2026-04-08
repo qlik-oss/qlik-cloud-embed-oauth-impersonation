@@ -51,7 +51,6 @@
 }
 
 .embed-data {
-  width: 600px;
   position: relative;
 }
 
@@ -93,19 +92,147 @@ qlik-embed {
   margin: 0;
 }
 
+/* Data panel — card wrapper for the raw dataset section */
+
+.data-panel {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.data-panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #f8f9fb;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.data-panel-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #5a6872;
+  line-height: 1.45;
+  max-width: 600px;
+}
+
+.data-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.data-timestamp {
+  font-size: 12px;
+  color: #8a9199;
+  white-space: nowrap;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  background: #0469b1;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+
+.btn-refresh:hover {
+  background: #025a96;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.btn-refresh:active {
+  background: #024a7c;
+}
+
+.btn-refresh:disabled {
+  background: #94c4e0;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-refresh .refresh-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.btn-refresh.is-loading .refresh-icon {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.data-session-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  font-size: 12px;
+  color: #5a6872;
+  background: #f0f4f7;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.data-session-badge .badge-label {
+  font-weight: 600;
+  color: #3b4752;
+}
+
+#chart-data {
+  padding: 0 18px 18px;
+}
+
 #chart-data table {
   width: 100%;
-  margin-top: 20px;
+  margin-top: 14px;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 13px;
 }
 
 #chart-data th,
 #chart-data td {
-  padding: 8px;
+  padding: 10px 14px;
   text-align: left;
+  border-bottom: 1px solid #eee;
 }
 
 #chart-data th {
-  background-color: #f2f2f2;
+  background: #f4f6f8;
+  color: #3b4752;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+#chart-data tbody tr:last-child td {
+  border-bottom: none;
+}
+
+#chart-data tbody tr:hover {
+  background: #f8f9fb;
 }
 
 /* Session timeout overlay — sits on top of the embed container */
