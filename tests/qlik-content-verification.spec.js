@@ -36,7 +36,7 @@ test.describe('Qlik Content Verification', () => {
       { href: '#sheet-nav',          selector: 'qlik-embed[ui="analytics/sheet"]',          name: 'Lightweight Sheet' },
       { href: '#analytics-chart',    selector: '#analytics-chart qlik-embed[ui="analytics/chart"]', name: 'Lightweight Chart' },
       { href: '#on-the-fly',         selector: '#on-the-fly qlik-embed[ui="analytics/chart"]',      name: 'On-the-fly Chart' },
-      { href: '#analytics-chart-data', selector: '#chart-data:not(:empty)',                           name: 'Raw Dataset' },
+      { href: '#analytics-chart-data', selector: '.data-panel #chart-data table',                      name: 'Raw Dataset' },
       { href: '#field',              selector: 'qlik-embed[ui="analytics/field"]',                  name: 'Filterable Field' },
       { href: '#classic-app',        selector: 'qlik-embed[ui="classic/app"]',                      name: 'Classic App' },
       { href: '#classic-chart',      selector: 'qlik-embed[ui="classic/chart"]',                    name: 'Legacy Charts' },

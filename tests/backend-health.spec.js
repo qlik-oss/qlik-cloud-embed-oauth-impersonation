@@ -242,6 +242,38 @@ test.describe('Backend Health & Diagnostics', () => {
     console.log(`   First dimension: "${data.returnedDimension[0]}"`);
     console.log(`   First measure:   "${data.returnedMeasure[0]}"`);
   });
+
+  test('8 — QIX engine: user attributes (/user-attributes)', async ({ request }) => {
+    await getAuthenticatedContext(request);
+
+    const res = await request.get('/user-attributes');
+
+    if (res.status() !== 200) {
+      let body;
+      try { body = await res.json(); } catch { body = { raw: await res.text().catch(() => '(empty)') }; }
+      const pretty = JSON.stringify(body, null, 2);
+
+      console.log(`\nFAIL: GET /user-attributes returned ${res.status()}`);
+      console.log(`Error:        ${body.error ?? 'N/A'}`);
+      console.log(`Message:      ${body.message ?? 'N/A'}`);
+      console.log(`Code:         ${body.code ?? 'N/A'}`);
+      console.log(`Enigma error: ${body.enigmaError ?? false}`);
+      if (body.stack) console.log(`Stack:\n${body.stack}`);
+      console.log(`Full response body:\n${pretty}\n`);
+
+      expect.soft(res.status(), `GET /user-attributes failed — see error details above`).toBe(200);
+      return;
+    }
+
+    expect(res.status(), `/user-attributes returned ${res.status()}`).toBe(200);
+    const data = await res.json();
+    expect(data.sessionUserId, 'Response should have sessionUserId').toBeTruthy();
+    expect(data.qlikUserId, 'Response should have qlikUserId').toBeTruthy();
+
+    console.log(`OK: /user-attributes returned valid user info`);
+    console.log(`   sessionUserId: ${data.sessionUserId}`);
+    console.log(`   qlikUserId:    ${data.qlikUserId}`);
+  });
 });
 
 // ── Unauthenticated 401 contract tests ──────────────────────────────────────
@@ -258,6 +290,7 @@ test.describe('Unauthenticated API — 401 contract', () => {
   const protectedEndpoints = [
     { method: 'GET',  path: '/app-sheets' },
     { method: 'GET',  path: '/hypercube' },
+    { method: 'GET',  path: '/user-attributes' },
     { method: 'POST', path: '/access-token' },
     { method: 'POST', path: '/config' },
   ];

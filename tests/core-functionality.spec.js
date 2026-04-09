@@ -66,4 +66,57 @@ test.describe('Core App Functionality', () => {
       console.log(`PASS: Navigated to ${section.name}`);
     }
   });
+
+  test('should display data panel with refresh functionality', async ({ page }) => {
+    await login(page);
+
+    await page.click('a[href="#analytics-chart-data"]');
+    await expect(page.locator('#analytics-chart-data')).toBeVisible();
+
+    // Data panel card structure
+    await expect(page.locator('.data-panel')).toBeVisible();
+    await expect(page.locator('.data-panel-header')).toBeVisible();
+    console.log('PASS: Data panel card is rendered');
+
+    // Info banner explaining REST-call behaviour
+    const infoBanner = page.locator('.data-panel-info');
+    await expect(infoBanner).toBeVisible();
+    await expect(infoBanner).toContainText('server-side REST call');
+    console.log('PASS: Info banner is visible');
+
+    // Refresh button exists and is enabled
+    const refreshBtn = page.locator('#refresh-data-btn');
+    await expect(refreshBtn).toBeVisible();
+    await expect(refreshBtn).toBeEnabled();
+    await expect(refreshBtn).toContainText('Refresh data');
+    console.log('PASS: Refresh button is enabled');
+
+    // Wait for initial data load (auto-fires on page load)
+    await expect(page.locator('#chart-data table')).toBeAttached({ timeout: 30000 });
+    console.log('PASS: Initial data loaded');
+
+    // Session badge should now show user information
+    const badge = page.locator('#data-session-user');
+    await expect(badge).toBeVisible();
+    await expect(badge).toContainText('User information:');
+    console.log('PASS: Session badge displays user information');
+
+    // Timestamp should be present after load
+    const timestamp = page.locator('#data-last-refreshed');
+    await expect(timestamp).toContainText('Updated');
+    const firstTimestamp = await timestamp.textContent();
+    console.log(`PASS: Timestamp displayed — ${firstTimestamp}`);
+
+    // Click refresh and verify loading state
+    await refreshBtn.click();
+    await expect(refreshBtn).toBeDisabled();
+    await expect(refreshBtn).toContainText('Refreshing');
+    console.log('PASS: Button enters loading state');
+
+    // After refresh completes, button re-enables and timestamp updates
+    await expect(refreshBtn).toBeEnabled({ timeout: 30000 });
+    await expect(refreshBtn).toContainText('Refresh data');
+    await expect(page.locator('#chart-data table')).toBeAttached();
+    console.log('PASS: Refresh completed, data table re-rendered');
+  });
 });
