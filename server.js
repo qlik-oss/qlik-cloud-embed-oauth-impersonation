@@ -20,6 +20,20 @@ if (missingEnvVars.length > 0) {
   process.exit(1);
 }
 
+/** Qlik APIs accept either `tenant.region.qlikcloud.com` or `https://tenant.region.qlikcloud.com`. */
+function normalizeTenantUri(uri) {
+  const trimmed = (uri || "").trim();
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+const rawTenantUri = (process.env.TENANT_URI || "").trim();
+const TENANT_URI = normalizeTenantUri(rawTenantUri);
+if (TENANT_URI !== rawTenantUri) {
+  console.log("Using normalized TENANT_URI:", TENANT_URI);
+}
+
 import express from "express";
 import session from "express-session";
 import path from "path";
@@ -33,11 +47,11 @@ import csrf from "csurf";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 
-// Application settings
+// Application settings (USER_PREFIX defaults match login.html copy for new learners)
 const appSettings = {
   secret: process.env.SESSION_SECRET,
   port: process.env.PORT,
-  userPrefix: process.env.USER_PREFIX,
+  userPrefix: process.env.USER_PREFIX ?? "oauth_gen_",
   hypercubeDimension: process.env.HYPERCUBE_DIMENSION,
   hypercubeMeasure: process.env.HYPERCUBE_MEASURE,
 };
@@ -45,7 +59,7 @@ const appSettings = {
 // Qlik backend config for server-to-server user lookup and creation
 const configBackend = {
   authType: "oauth2",
-  host: process.env.TENANT_URI,
+  host: TENANT_URI,
   clientId: process.env.OAUTH_BACKEND_CLIENT_ID,
   clientSecret: process.env.OAUTH_BACKEND_CLIENT_SECRET,
   noCache: true,
@@ -54,7 +68,7 @@ const configBackend = {
 // Qlik frontend config for minting impersonated end-user access tokens
 const configFrontend = {
   authType: "oauth2",
-  host: process.env.TENANT_URI,
+  host: TENANT_URI,
   clientId: process.env.OAUTH_FRONTEND_CLIENT_ID,
   clientSecret: process.env.OAUTH_FRONTEND_CLIENT_SECRET,
   noCache: true,
@@ -78,7 +92,7 @@ function getFrontendHostConfig(userId) {
 
 // Configuration parameters sent to the browser for qlik-embed setup
 const frontendParams = {
-  tenantUri: process.env.TENANT_URI,
+  tenantUri: TENANT_URI,
   oAuthFrontEndClientId: process.env.OAUTH_FRONTEND_CLIENT_ID,
   appId: process.env.APP_ID,
   sheetId: process.env.SHEET_ID,
@@ -109,7 +123,35 @@ const fileRateLimiter = rateLimit({
   },
 });
 
-app.use(express.static("src"));
+// Only expose asset folders — home.html and login.html are served via routes so GET /
+// always runs user provisioning (see README "Troubleshooting").
+app.use("/css", express.static(path.join(__dirname, "src/css")));
+app.use("/js", express.static(path.join(__dirname, "src/js")));
+app.use("/img", express.static(path.join(__dirname, "src/img")));
+
+const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many login attempts, please try again later.",
+  handler: (req, res, _next, options) => {
+    console.warn(`[Rate Limit] Login blocked ${req.ip} — ${options.max} per ${options.windowMs / 60000} min`);
+    res.status(options.statusCode).send(options.message);
+  },
+});
+
+const tokenRateLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many token requests, please try again later.",
+  handler: (req, res, _next, options) => {
+    console.warn(`[Rate Limit] Token mint blocked ${req.ip} — ${options.max} per minute`);
+    res.status(options.statusCode).send(options.message);
+  },
+});
 
 app.set('trust proxy', 1);
 
@@ -193,12 +235,18 @@ async function withQlikDoc(userId, callback) {
   return await callback(doc);
 }
 
+// OData filter string safety (email must not break the quoted literal)
+function escapeODataString(value) {
+  return String(value).replace(/"/g, "");
+}
+
 // Look up an active Qlik user by email
 async function getQlikUser(userEmail) {
+  const safeEmail = escapeODataString(userEmail);
   try {
     const { data: user } = await qlikUsers.getUsers(
       {
-        filter: `email eq "${userEmail}" and status eq "active"`,
+        filter: `email eq "${safeEmail}" and status eq "active"`,
       },
       {
         hostConfig: {
@@ -222,25 +270,26 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Authenticate user by email and store in session
-app.post("/login", csrfProtection, async (req, res) => {
+// Authenticate user by email and store in session (regenerate session id to limit fixation)
+app.post("/login", loginRateLimiter, csrfProtection, (req, res) => {
   const { email } = req.body;
   if (!email) {
     return res.status(400).send("Please provide an email");
   }
-  
-  try {
+
+  req.session.regenerate((regenErr) => {
+    if (regenErr) {
+      console.error("Session regenerate error:", regenErr);
+      return res.status(500).send("Login failed");
+    }
     req.session.email = email;
     console.log("Logging in user:", email);
     res.redirect("/");
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).send("Login failed");
-  }
+  });
 });
 
 // Mint and return an impersonated Qlik access token for the current user
-app.post("/access-token", [requireAuth, csrfProtection], async (req, res) => {
+app.post("/access-token", [tokenRateLimiter, requireAuth, csrfProtection], async (req, res) => {
   try {
     const accessToken = await qlikAuth.getAccessToken({
       hostConfig: getFrontendHostConfig(req.session.userId),
@@ -406,9 +455,13 @@ app.get("/", fileRateLimiter, csrfProtection, async (req, res) => {
   try {
     const prefixedEmail = appSettings.userPrefix + email;
     const currentUser = await getQlikUser(prefixedEmail);
+    const matches = currentUser.data;
 
-    if (currentUser.data.length !== 1) {
-      // Create user if not found
+    // Qlik Cloud enforces unique email per tenant (duplicates are migrated), so expect 0 or 1 match.
+    if (matches.length === 1) {
+      req.session.userId = matches[0].id;
+      console.log("Found existing user:", matches[0].id);
+    } else {
       const newUser = await qlikUsers.createUser(
         {
           name: prefixedEmail,
@@ -423,12 +476,9 @@ app.get("/", fileRateLimiter, csrfProtection, async (req, res) => {
           },
         }
       );
-      
+
       req.session.userId = newUser.data.id;
       console.log("Created user:", newUser.data.id);
-    } else {
-      req.session.userId = currentUser.data[0].id;
-      console.log("Found existing user:", currentUser.data[0].id);
     }
     
     return res.sendFile(path.join(__dirname, "/src/home.html"));

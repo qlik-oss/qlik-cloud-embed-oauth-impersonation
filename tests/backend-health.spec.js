@@ -37,7 +37,7 @@ async function getAuthenticatedContext(request) {
   for (let attempt = 1; attempt <= 2; attempt++) {
     loginRes = await request.post('/login', {
       form: { email: 'backend-health-test@test.com', _csrf: csrfToken },
-      maxRedirects: 5,           // follow the redirect chain → / → home.html
+      maxRedirects: 5,           // follow the redirect chain → GET / (serves home.html)
     });
     if (loginRes.status() === 200) break;
     if (attempt < 2) {

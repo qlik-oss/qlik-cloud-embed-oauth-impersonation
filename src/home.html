@@ -324,6 +324,46 @@
 
       import { qix } from "https://cdn.jsdelivr.net/npm/@qlik/api/index.js";
 
+      /** Human-readable message for thrown API objects or Errors (see getHypercube in script.js). */
+      function formatFetchError(error) {
+        if (error == null) return 'Unknown error';
+        if (typeof error === 'string') return error;
+        if (typeof error.message === 'string' && error.message) return error.message;
+        if (typeof error.error === 'string' && typeof error.message === 'string') {
+          return `${error.error}: ${error.message}`;
+        }
+        try {
+          return JSON.stringify(error);
+        } catch {
+          return String(error);
+        }
+      }
+
+      /**
+       * Remove the placeholder once the web component has real content (shadow root),
+       * or after timeout. Replaces a fixed delay so fast tenants show the UI sooner.
+       */
+      function revealAiEmbed(embed, loadingEl, { timeoutMs = 8000 } = {}) {
+        let done = false;
+        let iv;
+        let t;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          clearInterval(iv);
+          clearTimeout(t);
+          loadingEl.remove();
+          embed.style.display = 'block';
+        };
+        t = setTimeout(finish, timeoutMs);
+        iv = setInterval(() => {
+          const root = embed.shadowRoot;
+          if (root && (root.querySelector('iframe') || root.childElementCount > 0)) {
+            finish();
+          }
+        }, 120);
+      }
+
       // @qlik/api app session — reuses the WebSocket opened by qlik-embed web components.
       // Initialized after embeds load; used for keepalive pings.
       let qixSession = null;
@@ -414,7 +454,7 @@
           timestampEl.textContent = `Updated ${now.toLocaleTimeString()}`;
         } catch (error) {
           console.error('Error updating table:', error);
-          container.innerHTML = `<p style="color:#c0392b;padding-top:14px;">Failed to load data: ${error.message}</p>`;
+          container.innerHTML = `<p style="color:#c0392b;padding-top:14px;">Failed to load data: ${formatFetchError(error)}</p>`;
         } finally {
           btn.disabled = false;
           btn.classList.remove('is-loading');
@@ -495,11 +535,7 @@
           const agenticEmbed = createEmbed({ ui: 'ai/agentic-assistant', 'assistant-id': configParams.agenticAssistantId });
           agenticEmbed.style.display = 'none';
           agenticContainer.appendChild(agenticEmbed);
-
-          setTimeout(() => {
-            document.getElementById('agentic-assistant-loading')?.remove();
-            agenticEmbed.style.display = 'block';
-          }, 2000);
+          revealAiEmbed(agenticEmbed, agenticLoadingMsg);
         } else {
           document.querySelector('#agentic-assistant .embed-ai-agentic').textContent =
             'No Agentic Assistant configured. Set AGENTIC_ASSISTANT_ID in your .env file to enable this section.';
@@ -517,11 +553,7 @@
           const aiEmbed = createEmbed({ ui: 'ai/assistant', 'assistant-id': configParams.assistantId });
           aiEmbed.style.display = 'none';
           aiContainer.appendChild(aiEmbed);
-
-          setTimeout(() => {
-            document.getElementById('ai-assistant-loading')?.remove();
-            aiEmbed.style.display = 'block';
-          }, 2000);
+          revealAiEmbed(aiEmbed, loadingMsg);
         } else {
           document.querySelector('#ai-assistant .embed-ai-legacy').textContent =
             'No AI Assistant configured. Set ASSISTANT_ID in your .env file to enable this section.';
@@ -682,7 +714,7 @@
           console.error("Initialization error:", error);
           const errorDiv = document.createElement('div');
           errorDiv.style.cssText = 'position:fixed; top:20px; right:20px; background:#f8d7da; color:#721c24; padding:15px; border-radius:5px; z-index:9999; max-width:400px;';
-          errorDiv.innerHTML = `<strong>Application Error:</strong><br>${error.message}`;
+          errorDiv.innerHTML = `<strong>Application Error:</strong><br>${formatFetchError(error)}`;
           document.body.appendChild(errorDiv);
           setTimeout(() => errorDiv.remove(), 10000);
         }
