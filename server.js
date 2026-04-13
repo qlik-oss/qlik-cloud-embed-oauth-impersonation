@@ -190,6 +190,9 @@ const { csrfSynchronisedProtection: csrfProtection } = csrfSync({
   },
 });
 
+// CSRF for all unsafe methods (csrf-sync; GET/HEAD/OPTIONS skipped).
+app.use(csrfProtection);
+
 // Open a QIX app session (since 2.6.0 doesn't need identity).
 function getQlikAppSession(userId) {
   if (process.env.NODE_ENV !== "production") {
@@ -281,7 +284,7 @@ function requireAuth(req, res, next) {
 }
 
 // Authenticate user by email and store in session (regenerate session id to limit fixation)
-app.post("/login", loginRateLimiter, csrfProtection, (req, res) => {
+app.post("/login", loginRateLimiter, (req, res) => {
   const { email } = req.body;
   if (!email) {
     return res.status(400).send("Please provide an email");
@@ -299,7 +302,7 @@ app.post("/login", loginRateLimiter, csrfProtection, (req, res) => {
 });
 
 // Mint and return an impersonated Qlik access token for the current user
-app.post("/access-token", [tokenRateLimiter, requireAuth, csrfProtection], async (req, res) => {
+app.post("/access-token", [tokenRateLimiter, requireAuth], async (req, res) => {
   try {
     const accessToken = await qlikAuth.getAccessToken({
       hostConfig: getFrontendHostConfig(req.session.userId),
@@ -312,7 +315,7 @@ app.post("/access-token", [tokenRateLimiter, requireAuth, csrfProtection], async
   }
 });
 
-app.post("/config", [requireAuth, csrfProtection], (req, res) => {
+app.post("/config", [requireAuth], (req, res) => {
   res.json({ ...frontendParams, userEmail: req.session.email });
 });
 
@@ -436,18 +439,18 @@ app.get("/user-attributes", requireAuth, async (req, res) => {
 });
 
 // Serve the login page with a CSRF token
-app.get("/login", fileRateLimiter, csrfProtection, (req, res) => {
+app.get("/login", fileRateLimiter, (req, res) => {
   console.log(`[File Request] ${req.method} ${req.originalUrl} from ${req.ip}`);
   res.sendFile(path.join(__dirname, "/src/login.html"));
 });
 
 // Return a fresh CSRF token for client-side form submissions
-app.get("/csrf-token", csrfProtection, (req, res) => {
+app.get("/csrf-token", (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
 // Resolve the Qlik user (create if needed) and serve the home page
-app.get("/", fileRateLimiter, csrfProtection, async (req, res) => {
+app.get("/", fileRateLimiter, async (req, res) => {
   console.log(`[File Request] ${req.method} ${req.originalUrl} from ${req.ip}`);
   const email = req.session.email;
   if (!email) {
