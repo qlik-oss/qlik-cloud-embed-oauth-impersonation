@@ -460,7 +460,12 @@
           container.appendChild(table);
 
           const now = new Date();
-          timestampEl.textContent = `Updated ${now.toLocaleTimeString()}`;
+          const formattedTime = now.toLocaleTimeString(undefined, {
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+          });
+          timestampEl.textContent = `Updated ${formattedTime}.${String(now.getMilliseconds()).padStart(3, '0')}`;
         } catch (error) {
           console.error('Error updating table:', error);
           container.replaceChildren();

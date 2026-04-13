@@ -174,7 +174,10 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-const { csrfSynchronisedProtection: csrfProtection } = csrfSync({
+const {
+  csrfSynchronisedProtection: csrfProtection,
+  generateToken,
+} = csrfSync({
   getTokenFromRequest: (req) => {
     const headerToken =
       req.headers["csrf-token"] ||
@@ -446,7 +449,7 @@ app.get("/login", fileRateLimiter, (req, res) => {
 
 // Return a fresh CSRF token for client-side form submissions
 app.get("/csrf-token", (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
+  res.json({ csrfToken: generateToken(req) });
 });
 
 // Resolve the Qlik user (create if needed) and serve the home page
