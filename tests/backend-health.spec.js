@@ -24,7 +24,7 @@ import { test, expect } from '@playwright/test';
 
 /** POST /login with a test email and return the session cookie jar. */
 async function getAuthenticatedContext(request) {
-  // 1. Grab a CSRF token (sets the _csrf cookie too)
+  // 1. Grab a CSRF token (stored in the session alongside the session cookie)
   const csrfRes = await request.get('/csrf-token');
   expect(csrfRes.ok(), `GET /csrf-token failed: ${csrfRes.status()}`).toBeTruthy();
   const { csrfToken } = await csrfRes.json();

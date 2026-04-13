@@ -207,7 +207,7 @@ These align with [OAuth impersonation troubleshooting](https://qlik.dev/authenti
 - **Token or user API failures** — Confirm client IDs/secrets, impersonation enabled on the frontend client, and scopes as in Prerequisites.
 - **Impersonation / user errors** — This app creates the Qlik user on first `GET /` after login. Ensure your backend client can create users and that the prefixed email does not conflict.
 - **Wrong tenant** — Verify `TENANT_URI` matches the tenant where the app and OAuth clients were registered.
-- **CSRF** — This project uses [`csurf`](https://www.npmjs.com/package/csurf) to demonstrate CSRF protection; the package is deprecated upstream. For new production services, plan a migration to a maintained approach.
+- **CSRF** — This project uses [`csrf-sync`](https://www.npmjs.com/package/csrf-sync) (synchronizer token pattern with `express-session`) for CSRF protection on state-changing requests.
 
 ## Testing
 

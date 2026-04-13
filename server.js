@@ -43,8 +43,7 @@ import {
   qix as openAppSession,
 } from "@qlik/api";
 import { fileURLToPath } from "url";
-import csrf from "csurf";
-import cookieParser from "cookie-parser";
+import { csrfSync } from "csrf-sync";
 import rateLimit from "express-rate-limit";
 
 // Application settings (USER_PREFIX defaults match login.html copy for new learners)
@@ -157,8 +156,6 @@ app.set('trust proxy', 1);
 
 qlikAuth.setDefaultHostConfig(configFrontend);
 
-app.use(cookieParser());
-
 // Express session with secure cookie and 1-hour TTL
 app.use(
   session({
@@ -177,8 +174,20 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-const csrfProtection = csrf({ 
-  cookie: true 
+const { csrfSynchronisedProtection: csrfProtection } = csrfSync({
+  getTokenFromRequest: (req) => {
+    const headerToken =
+      req.headers["csrf-token"] ||
+      req.headers["x-csrf-token"] ||
+      req.headers["xsrf-token"] ||
+      req.headers["x-xsrf-token"];
+    const ct = (req.headers["content-type"] || "").toLowerCase();
+    if (ct.includes("application/json")) {
+      return headerToken;
+    }
+    const bodyToken = typeof req.body?._csrf === "string" ? req.body._csrf : undefined;
+    return bodyToken || headerToken;
+  },
 });
 
 // Open a QIX app session (since 2.6.0 doesn't need identity).
