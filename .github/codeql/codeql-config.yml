@@ -1,8 +1,0 @@
-name: Project CodeQL configuration
-
-# js/missing-token-validation only recognizes csurf, tiny-csrf, lusca, express.csrf, etc.
-# (see github/codeql javascript/ql/src/Security/CWE-352/MissingCsrfMiddleware.ql).
-# CSRF is implemented with csrf-sync: global app.use(csrfSynchronisedProtection) in server.js.
-query-filters:
-  - exclude:
-      id: js/missing-token-validation
