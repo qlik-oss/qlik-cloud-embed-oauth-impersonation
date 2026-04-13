@@ -117,6 +117,10 @@ test.describe('Core App Functionality', () => {
     await expect(refreshBtn).toBeEnabled({ timeout: 30000 });
     await expect(refreshBtn).toContainText('Refresh data');
     await expect(page.locator('#chart-data table')).toBeAttached();
-    console.log('PASS: Refresh completed, data table re-rendered');
+    await expect(timestamp).not.toHaveText(firstTimestamp ?? '', { timeout: 30000 });
+    const secondTimestamp = await timestamp.textContent();
+    console.log(
+      `PASS: Refresh completed — timestamp updated from ${firstTimestamp} to ${secondTimestamp}`
+    );
   });
 });

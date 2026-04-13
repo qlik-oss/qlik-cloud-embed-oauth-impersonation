@@ -322,7 +322,7 @@
 
     <script type="module">
 
-      import { qix } from "https://cdn.jsdelivr.net/npm/@qlik/api/index.js";
+      import { qix } from "https://cdn.jsdelivr.net/npm/@qlik/api@2/index.js";
 
       /** Human-readable message for thrown API objects or Errors (see getHypercube in script.js). */
       function formatFetchError(error) {
@@ -416,7 +416,16 @@
 
           container.innerHTML = '';
 
-          sessionBadge.innerHTML = `<span class="badge-label">User information:</span> ${userAttributes.qlikUserId} (user ID: ${userAttributes.sessionUserId})`;
+          sessionBadge.replaceChildren();
+          const badgeLabel = document.createElement('span');
+          badgeLabel.className = 'badge-label';
+          badgeLabel.textContent = 'User information:';
+          sessionBadge.appendChild(badgeLabel);
+          sessionBadge.appendChild(
+            document.createTextNode(
+              ` ${userAttributes.qlikUserId} (user ID: ${userAttributes.sessionUserId})`
+            )
+          );
           sessionBadge.style.display = 'flex';
 
           const table = document.createElement('table');
@@ -454,7 +463,12 @@
           timestampEl.textContent = `Updated ${now.toLocaleTimeString()}`;
         } catch (error) {
           console.error('Error updating table:', error);
-          container.innerHTML = `<p style="color:#c0392b;padding-top:14px;">Failed to load data: ${formatFetchError(error)}</p>`;
+          container.replaceChildren();
+          const errP = document.createElement('p');
+          errP.style.color = '#c0392b';
+          errP.style.paddingTop = '14px';
+          errP.textContent = `Failed to load data: ${formatFetchError(error)}`;
+          container.appendChild(errP);
         } finally {
           btn.disabled = false;
           btn.classList.remove('is-loading');
@@ -714,7 +728,11 @@
           console.error("Initialization error:", error);
           const errorDiv = document.createElement('div');
           errorDiv.style.cssText = 'position:fixed; top:20px; right:20px; background:#f8d7da; color:#721c24; padding:15px; border-radius:5px; z-index:9999; max-width:400px;';
-          errorDiv.innerHTML = `<strong>Application Error:</strong><br>${formatFetchError(error)}`;
+          const errorTitle = document.createElement('strong');
+          errorTitle.textContent = 'Application Error:';
+          errorDiv.appendChild(errorTitle);
+          errorDiv.appendChild(document.createElement('br'));
+          errorDiv.appendChild(document.createTextNode(formatFetchError(error)));
           document.body.appendChild(errorDiv);
           setTimeout(() => errorDiv.remove(), 10000);
         }

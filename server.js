@@ -192,8 +192,9 @@ const { csrfSynchronisedProtection: csrfProtection } = csrfSync({
 
 // Open a QIX app session (since 2.6.0 doesn't need identity).
 function getQlikAppSession(userId) {
-  console.log("Getting QIX app session for userId", getFrontendHostConfig(userId).userId);
-  
+  if (process.env.NODE_ENV !== "production") {
+    console.log("Getting QIX app session for userId", getFrontendHostConfig(userId).userId);
+  }
   return openAppSession.openAppSession({
     appId: frontendParams.appId,
     hostConfig: getFrontendHostConfig(userId),
@@ -358,34 +359,39 @@ app.get("/hypercube", requireAuth, async (req, res) => {
 
       // Extract hypercube data
       const model = await app.createSessionObject(properties);
-      const layout = await model.getLayout();
-      let data = layout.qHyperCube.qDataPages[0].qMatrix;
+      try {
+        const layout = await model.getLayout();
+        let data = layout.qHyperCube.qDataPages[0].qMatrix;
 
-      // Get additional pages if needed
-      const columns = layout.qHyperCube.qSize.qcx;
-      const totalHeight = layout.qHyperCube.qSize.qcy;
-      const pageHeight = 5;
-      const numberOfPages = Math.ceil(totalHeight / pageHeight);
+        // Get additional pages if needed
+        const columns = layout.qHyperCube.qSize.qcx;
+        const totalHeight = layout.qHyperCube.qSize.qcy;
+        const pageHeight = 5;
+        const numberOfPages = Math.ceil(totalHeight / pageHeight);
 
-      for (let i = 1; i < numberOfPages; i++) {
-        const page = {
-          qTop: pageHeight * i,
-          qLeft: 0,
-          qWidth: columns,
-          qHeight: pageHeight,
+        for (let i = 1; i < numberOfPages; i++) {
+          const page = {
+            qTop: pageHeight * i,
+            qLeft: 0,
+            qWidth: columns,
+            qHeight: pageHeight,
+          };
+          const row = await model.getHyperCubeData("/qHyperCubeDef", [page]);
+          data.push(...row[0].qMatrix);
+        }
+
+        // Transform data for front-end consumption
+        return {
+          returnedDimension: data.map(row => row[0].qText),
+          returnedMeasure: data.map(row => row[1].qText),
         };
-        const row = await model.getHyperCubeData("/qHyperCubeDef", [page]);
-        data.push(...row[0].qMatrix);
+      } finally {
+        try {
+          await app.destroySessionObject(model.id);
+        } catch (destroyErr) {
+          console.warn("[hypercube] destroySessionObject failed:", destroyErr);
+        }
       }
-
-      // Destroy the session object to avoid accumulation across requests
-      await app.destroySessionObject(model.id);
-
-      // Transform data for front-end consumption
-      return {
-        returnedDimension: data.map(row => row[0].qText),
-        returnedMeasure: data.map(row => row[1].qText),
-      };
     });
 
     res.json(result);
@@ -406,25 +412,12 @@ app.get("/hypercube", requireAuth, async (req, res) => {
 app.get("/user-attributes", requireAuth, async (req, res) => {
   try {
     const result = await withQlikDoc(req.session.userId, async (app) => {
-      const model = await app.createSessionObject({
-        qInfo: {
-          qType: "current-user-attributes",
-        },
-        qUserId: {
-          qStringExpression: {
-            qExpr: "=OSUser()",
-          },
-        },
-      });
-
-      const layout = await model.getLayout();
-
-      // Destroy the session object to avoid accumulation across requests
-      await app.destroySessionObject(model.id);
+      const evaluated = await app.evaluateEx("=OSUser()");
+      const qlikUserId = String(evaluated.qText ?? "");
 
       return {
         sessionUserId: req.session.userId,
-        qlikUserId: layout.qUserId,
+        qlikUserId,
       };
     });
 
