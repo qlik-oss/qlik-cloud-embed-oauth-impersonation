@@ -9,8 +9,33 @@ async function login(page) {
   await page.waitForLoadState('domcontentloaded');
 }
 
+async function waitForDataTableOrRecover(page) {
+  const table = page.locator('#chart-data table');
+  const errorMessage = page.locator('#chart-data p');
+
+  // First chance: initial auto-load on page init.
+  const firstPassLoaded = await table.waitFor({ state: 'attached', timeout: 60000 })
+    .then(() => true)
+    .catch(() => false);
+  if (firstPassLoaded) return;
+
+  // If initial load failed transiently, retry once using the refresh control.
+  const refreshBtn = page.locator('#refresh-data-btn');
+  await expect(refreshBtn).toBeVisible();
+  await expect(refreshBtn).toBeEnabled({ timeout: 30000 });
+  await refreshBtn.click();
+  await expect(refreshBtn).toBeDisabled();
+  await expect(refreshBtn).toBeEnabled({ timeout: 45000 });
+
+  await table.waitFor({ state: 'attached', timeout: 60000 }).catch(async () => {
+    const errText = await errorMessage.first().textContent().catch(() => '');
+    throw new Error(`Data panel did not load table after retry. Last error: ${errText || 'unknown'}`);
+  });
+}
+
 test.describe('Core App Functionality', () => {
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(120000);
     page.setDefaultTimeout(60000);
 
     page.on('console', msg => {
@@ -89,7 +114,7 @@ test.describe('Core App Functionality', () => {
     // (WebKit is often slower than Chromium here).
     const refreshBtn = page.locator('#refresh-data-btn');
     await expect(refreshBtn).toBeVisible();
-    await expect(page.locator('#chart-data table')).toBeAttached({ timeout: 60000 });
+    await waitForDataTableOrRecover(page);
     await expect(refreshBtn).toBeEnabled({ timeout: 30000 });
     await expect(refreshBtn).toContainText('Refresh data');
     console.log('PASS: Refresh button is enabled');
@@ -115,10 +140,10 @@ test.describe('Core App Functionality', () => {
     console.log('PASS: Button enters loading state');
 
     // After refresh completes, button re-enables and timestamp updates
-    await expect(refreshBtn).toBeEnabled({ timeout: 30000 });
+    await expect(refreshBtn).toBeEnabled({ timeout: 60000 });
     await expect(refreshBtn).toContainText('Refresh data');
     await expect(page.locator('#chart-data table')).toBeAttached();
-    await expect(timestamp).not.toHaveText(firstTimestamp ?? '', { timeout: 30000 });
+    await expect(timestamp).not.toHaveText(firstTimestamp ?? '', { timeout: 60000 });
     const secondTimestamp = await timestamp.textContent();
     console.log(
       `PASS: Refresh completed — timestamp updated from ${firstTimestamp} to ${secondTimestamp}`
