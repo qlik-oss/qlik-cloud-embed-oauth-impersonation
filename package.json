@@ -1,4 +1,23 @@
 {
+  "name": "qlik-cloud-embed-oauth-impersonation",
+  "description": "Demo app showing qlik-embed and qlik/api with OAuth impersonation in Qlik Cloud.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qlik-oss/qlik-cloud-embed-oauth-impersonation.git"
+  },
+  "homepage": "https://github.com/qlik-oss/qlik-cloud-embed-oauth-impersonation",
+  "bugs": {
+    "url": "https://github.com/qlik-oss/qlik-cloud-embed-oauth-impersonation/issues"
+  },
+  "keywords": [
+    "qlik",
+    "qlik-cloud",
+    "qlik-embed",
+    "oauth",
+    "impersonation",
+    "express"
+  ],
   "type": "module",
   "dependencies": {
     "@qlik/api": "^2.0.0",

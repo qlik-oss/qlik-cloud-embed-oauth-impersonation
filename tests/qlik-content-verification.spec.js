@@ -9,6 +9,12 @@ async function login(page) {
   await page.waitForLoadState('domcontentloaded');
 }
 
+async function openSection(page, href) {
+  await page.click(`a[href="${href}"]`);
+  const sectionId = href.replace('#', '');
+  await expect(page.locator(`#${sectionId}`)).toBeVisible({ timeout: 30000 });
+}
+
 test.describe('Qlik Content Verification', () => {
   test.beforeEach(async ({ page }) => {
     // Qlik UIs can take 30–60 s (sometimes longer) to fully render
@@ -36,7 +42,7 @@ test.describe('Qlik Content Verification', () => {
       { href: '#sheet-nav',          selector: 'qlik-embed[ui="analytics/sheet"]',          name: 'Lightweight Sheet' },
       { href: '#analytics-chart',    selector: '#analytics-chart qlik-embed[ui="analytics/chart"]', name: 'Lightweight Chart' },
       { href: '#on-the-fly',         selector: '#on-the-fly qlik-embed[ui="analytics/chart"]',      name: 'On-the-fly Chart' },
-      { href: '#analytics-chart-data', selector: '#chart-data:not(:empty)',                           name: 'Raw Dataset' },
+      { href: '#analytics-chart-data', selector: '.data-panel #chart-data table',                      name: 'Raw Dataset' },
       { href: '#field',              selector: 'qlik-embed[ui="analytics/field"]',                  name: 'Filterable Field' },
       { href: '#classic-app',        selector: 'qlik-embed[ui="classic/app"]',                      name: 'Classic App' },
       { href: '#classic-chart',      selector: 'qlik-embed[ui="classic/chart"]',                    name: 'Legacy Charts' },
@@ -45,25 +51,21 @@ test.describe('Qlik Content Verification', () => {
     // AI assistants may not be configured; accept either the embed or the "not configured" message
 
     // Agentic Assistant (ai/agentic-assistant)
-    await page.click('a[href="#agentic-assistant"]');
-    await expect(page.locator('#agentic-assistant')).toBeVisible();
+    await openSection(page, '#agentic-assistant');
     const agenticLocator = page.locator('qlik-embed[ui="ai/agentic-assistant"], #agentic-assistant .embed-ai');
-    await expect(agenticLocator.first()).toBeAttached({ timeout: 15000 });
+    await expect(agenticLocator.first()).toBeAttached({ timeout: 45000 });
     console.log('PASS: Agentic Assistant section present');
 
     // AI Assistant — legacy (ai/assistant)
-    await page.click('a[href="#ai-assistant"]');
-    await expect(page.locator('#ai-assistant')).toBeVisible();
+    await openSection(page, '#ai-assistant');
     const aiLocator = page.locator('qlik-embed[ui="ai/assistant"], #ai-assistant .embed-ai');
-    await expect(aiLocator.first()).toBeAttached({ timeout: 15000 });
+    await expect(aiLocator.first()).toBeAttached({ timeout: 45000 });
     console.log('PASS: AI Assistant (legacy) section present');
 
     for (const section of sections) {
       console.log(`Checking ${section.name}...`);
-      await page.click(`a[href="${section.href}"]`);
-      const sectionId = section.href.replace('#', '');
-      await expect(page.locator(`#${sectionId}`)).toBeVisible();
-      await expect(page.locator(section.selector)).toBeAttached({ timeout: 30000 });
+      await openSection(page, section.href);
+      await expect(page.locator(section.selector)).toBeAttached({ timeout: 45000 });
       console.log(`PASS: ${section.name} embed element is present`);
     }
   });

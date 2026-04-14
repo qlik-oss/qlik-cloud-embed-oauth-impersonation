@@ -39,10 +39,10 @@ It showcases several embedding techniques, such as:
 - [Node.js](https://nodejs.org) version 20 or higher
 - An [OAuth M2M client](https://qlik.dev/authenticate/oauth/create/create-oauth-client/) for the backend calls, configured with:
     - Scopes: `user_default`, `admin_classic`
-    - Allowed origins: `http://localhost:3000`
+    - Allowed origins: must match your app origin exactly (scheme, host, and port). For the default `PORT=3000` use `http://localhost:3000`. If you change `PORT`, update both OAuth clients (for example `http://localhost:8080`).
 - An [OAuth M2M impersonation client](https://qlik.dev/authenticate/oauth/create-oauth-client-m2m-impersonation/) for the frontend calls, configured with:
     - Scopes: `user_default`
-    - Allowed origins: `http://localhost:3000`
+    - Allowed origins: same rule as the backend client — a mismatch is a frequent cause of embed failures after the token is minted.
 
 ## Step 1. Set up your local project
 
@@ -87,11 +87,11 @@ Alternatively, you can download and extract the project files.
 
 1. Rename the `template.env` file to `.env`.
 2. Edit the `.env` file with values that match your Qlik Cloud deployment:
+    - `NODE_ENV`: use `development` for local runs over **http://** (for example `http://localhost:3000`). The server sets session cookies with `Secure` only in production; without this, browsers will not send the session cookie on plain HTTP and login/CSRF will fail. Use `production` only when the app is served over HTTPS.
     - `OAUTH_BACKEND_CLIENT_ID` and `OAUTH_BACKEND_CLIENT_SECRET`: enter the credentials obtained when you created the OAuth M2M client in the Administration activity center.
     - `OAUTH_FRONTEND_CLIENT_ID` and `OAUTH_FRONTEND_CLIENT_SECRET`: enter the credentials obtained when you created the OAuth M2M impersonation client in the Administration activity center.
       > Keep these secrets safe as they provide wide access to your tenant.
-    - `TENANT_URI`: enter the hostname of the Qlik Cloud tenant against which the app will run, such as
-    `z29kgagw312sl0g.eu.qlikcloud.com`.
+    - `TENANT_URI`: your tenant host **or** full base URL, for example `z29kgagw312sl0g.eu.qlikcloud.com` or `https://z29kgagw312sl0g.eu.qlikcloud.com`.
     - `APP_ID`: enter the app GUID for the Qlik Sense app you uploaded to your tenant (used for analytics/sheet, classic/app, analytics/chart and classic/chart examples).
     - `AGENTIC_ASSISTANT_ID`: enter the GUID of the Qlik Answers agentic assistant for the `ai/agentic-assistant` UI, or leave blank to omit.
     - `ASSISTANT_ID`: enter the GUID of the Qlik Answers Assistant you wish to embed with the legacy `ai/assistant` UI, or leave blank to omit.
@@ -106,8 +106,8 @@ Alternatively, you can download and extract the project files.
     - `MASTER_MEASURE`: a master measure name used for the on-the-fly example.
 4. (Optional) If you wish to further configure your web app and integration, update:
    - `SESSION_SECRET`: enter a random long string that will be used to sign the session.
-   - `PORT`: specify the port the web app will be hosted app when you run it with `npm start`.
-   - `USER_PREFIX`: enter the prefix that new users will be created with when logging into the web app.
+   - `PORT`: specify the port the web app will be hosted on when you run it with `npm start`.
+   - `USER_PREFIX`: optional. Prefix for Qlik users created from the demo login (defaults to `oauth_gen_` if unset). Use a dedicated prefix so generated users do not collide with real accounts.
 
 ## Step 4. Install the dependencies and run the app
 
@@ -176,23 +176,39 @@ The browser never sees the OAuth client secrets. It only ever receives a short-l
 ├── server.js               # Express backend: auth flow, user provisioning, API routes
 ├── template.env            # Copy to .env and fill in your credentials
 ├── src/
-│   ├── home.html           # Main dashboard — all qlik-embed examples in one page
-│   ├── login.html          # Demo login form (email only, no real auth)
+│   ├── home.html           # Main dashboard (served only from GET / after user provisioning)
+│   ├── login.html          # Demo login (served from GET /login)
 │   ├── js/
 │   │   └── script.js       # Frontend helpers: getAccessToken, getConfig, getSheets, getHypercube
-│   └── css/
-│       └── qlik-embed-style.css  # Layout styles for embed containers
+│   ├── css/                # Served at /css (Express static)
+│   └── img/                # Served at /img
 └── tests/                  # Playwright end-to-end tests
 ```
 
+Only `/css`, `/js`, and `/img` are mounted as static files. `home.html` is not served at `/home.html`, so use `/` after login so the server always runs user provisioning (`GET /`) before returning the dashboard.
+
 **Key entry points for reading the code:**
 
-- `server.js` lines 45–93 — the two OAuth configs and the `getFrontendHostConfig()` helper
+- `server.js` — `normalizeTenantUri()`, the two OAuth configs, and `getFrontendHostConfig()`
 - `server.js` `POST /access-token` — how a user-scoped token is minted on each request
-- `server.js` `GET /` — how a Qlik user is looked up or created on first login
-- `src/js/script.js` `getAccessToken()` — the callback `qlik-embed` calls for tokens
+- `server.js` `GET /` — how a Qlik user is looked up or created on first visit after login
+- `src/js/script.js` `getAccessToken()` — the callback `qlik-embed` calls for tokens (must remain a global function)
 - `src/home.html` `updateHeaders()` — how `qlik-embed` is loaded and configured
-- `src/home.html` `updateQlikEmbedTags()` — how app/sheet/object IDs are set at runtime
+- `src/home.html` `renderQlikEmbeds()` — how `<qlik-embed>` elements and IDs are created at runtime
+
+## What this sample omits (production)
+
+Qlik’s [manage users and groups with OAuth impersonation](https://qlik.dev/embed/qlik-embed/authenticate/manage-users-groups-impersonation/) guidance recommends **group-based access** and managed roles so access scales beyond per-user assignments. This repo creates users and relies on a broadly shared space for the demo app only. Before production, review the [guiding principles for OAuth impersonation](https://qlik.dev/authenticate/oauth/guiding-principles-oauth-impersonation/) and plan groups, roles, and least-privilege spaces.
+
+## Troubleshooting
+
+These align with [OAuth impersonation troubleshooting](https://qlik.dev/authenticate/oauth/implement-oauth-impersonation/) and common integration mistakes:
+
+- **Blank embeds or auth errors after login** — Check both OAuth clients’ **allowed origins** match your running app URL (including port).
+- **Token or user API failures** — Confirm client IDs/secrets, impersonation enabled on the frontend client, and scopes as in Prerequisites.
+- **Impersonation / user errors** — This app creates the Qlik user on first `GET /` after login. Ensure your backend client can create users and that the prefixed email does not conflict.
+- **Wrong tenant** — Verify `TENANT_URI` matches the tenant where the app and OAuth clients were registered.
+- **CSRF** — This project uses [`csrf-sync`](https://www.npmjs.com/package/csrf-sync) (synchronizer token pattern with `express-session`) for CSRF protection on state-changing requests.
 
 ## Testing
 
