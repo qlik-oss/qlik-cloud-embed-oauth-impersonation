@@ -3,6 +3,8 @@
 End-to-end tests that run against a **live** Qlik Cloud tenant.
 They require valid `.env` credentials (or CI secrets) and a running server.
 
+For local runs over **http://localhost**, keep `NODE_ENV=development` in `.env` (see the project `template.env` and main README) so session cookies work; otherwise login and CSRF checks can fail.
+
 ## Test Files
 
 | File | What it covers |

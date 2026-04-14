@@ -35,8 +35,9 @@ async function getAuthenticatedContext(request) {
   //    Retry once if the Qlik user-provisioning call is transiently slow.
   let loginRes;
   for (let attempt = 1; attempt <= 2; attempt++) {
+    const token = attempt === 1 ? csrfToken : await freshCsrf(request);
     loginRes = await request.post('/login', {
-      form: { email: 'backend-health-test@test.com', _csrf: csrfToken },
+      form: { email: 'backend-health-test@test.com', _csrf: token },
       maxRedirects: 5,           // follow the redirect chain → GET / (serves home.html)
     });
     if (loginRes.status() === 200) break;

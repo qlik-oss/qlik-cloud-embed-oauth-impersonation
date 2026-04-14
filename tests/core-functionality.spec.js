@@ -84,15 +84,16 @@ test.describe('Core App Functionality', () => {
     await expect(infoBanner).toContainText('server-side REST call');
     console.log('PASS: Info banner is visible');
 
-    // Refresh button exists and is enabled
+    // Home runs updateTable() on DOMContentLoaded; the button stays disabled until
+    // hypercube + user fetch finish. Wait for the table before asserting enabled
+    // (WebKit is often slower than Chromium here).
     const refreshBtn = page.locator('#refresh-data-btn');
     await expect(refreshBtn).toBeVisible();
-    await expect(refreshBtn).toBeEnabled();
+    await expect(page.locator('#chart-data table')).toBeAttached({ timeout: 60000 });
+    await expect(refreshBtn).toBeEnabled({ timeout: 30000 });
     await expect(refreshBtn).toContainText('Refresh data');
     console.log('PASS: Refresh button is enabled');
 
-    // Wait for initial data load (auto-fires on page load)
-    await expect(page.locator('#chart-data table')).toBeAttached({ timeout: 30000 });
     console.log('PASS: Initial data loaded');
 
     // Session badge should now show user information

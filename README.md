@@ -87,6 +87,7 @@ Alternatively, you can download and extract the project files.
 
 1. Rename the `template.env` file to `.env`.
 2. Edit the `.env` file with values that match your Qlik Cloud deployment:
+    - `NODE_ENV`: use `development` for local runs over **http://** (for example `http://localhost:3000`). The server sets session cookies with `Secure` only in production; without this, browsers will not send the session cookie on plain HTTP and login/CSRF will fail. Use `production` only when the app is served over HTTPS.
     - `OAUTH_BACKEND_CLIENT_ID` and `OAUTH_BACKEND_CLIENT_SECRET`: enter the credentials obtained when you created the OAuth M2M client in the Administration activity center.
     - `OAUTH_FRONTEND_CLIENT_ID` and `OAUTH_FRONTEND_CLIENT_SECRET`: enter the credentials obtained when you created the OAuth M2M impersonation client in the Administration activity center.
       > Keep these secrets safe as they provide wide access to your tenant.
