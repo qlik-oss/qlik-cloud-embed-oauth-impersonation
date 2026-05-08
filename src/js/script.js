@@ -99,6 +99,28 @@ async function getHypercube() {
 }
 
 
+// Retrieve the current Qlik user identity from the backend app session
+async function getUserAttributes() {
+  try {
+    const response = await fetch("/user-attributes", {
+      method: "GET",
+      credentials: "include",
+      mode: "same-origin",
+      redirect: "follow",
+    });
+    handleSessionExpired(response);
+    if (response.status === 200) {
+      return response.json();
+    }
+    const errorData = await response.json();
+    throw errorData;
+  } catch (error) {
+    console.error("User attributes error:", error);
+    throw error;
+  }
+}
+
+
 // Retrieve application connectivity parameters from the backend
 async function getConfigParameter() {
   try {
