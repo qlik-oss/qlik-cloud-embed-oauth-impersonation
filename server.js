@@ -181,59 +181,13 @@ const csrfProtection = csrf({
   cookie: true 
 });
 
-// Open a QIX app session (since 2.6.0 doesn't need identity).
+// Open a QIX app session for a given user
 function getQlikAppSession(userId) {
-  if (process.env.NODE_ENV !== "production") {
-    console.log("Getting QIX app session for userId", getFrontendHostConfig(userId).userId);
-  }
   return openAppSession.openAppSession({
     appId: frontendParams.appId,
     hostConfig: getFrontendHostConfig(userId),
-    //identity: userId,
     withoutData: false,
   });
-}
-
-// Execute a callback against a Qlik app doc with 3-stage session recovery:
-// 1. Try the cached session  2. Resume on failure  3. Open a fresh identity session
-async function withQlikDoc(userId, callback) {
-  const appSession = getQlikAppSession(userId);
-
-  function isSessionError(err) {
-    return err.code === -11 || err.code === -32602 ||
-      /session suspended|socket closed/i.test(err.message);
-  }
-
-  try {
-    const doc = await appSession.getDoc();
-    return await callback(doc);
-  } catch (err) {
-    if (!isSessionError(err)) throw err;
-    console.warn(`[QIX] Session error (code ${err.code}) — resuming...`);
-  }
-
-  // First retry: resume the existing session
-  try {
-    await appSession.resume();
-    console.log('[QIX] Session resumed');
-    const doc = await appSession.getDoc();
-    return await callback(doc);
-  } catch (err) {
-    if (!isSessionError(err)) throw err;
-    console.warn('[QIX] Resumed session still has stale handles — opening fresh session');
-  }
-
-  // Second retry: fresh session with unique identity to bypass cache
-  try { await appSession.close(); } catch { /* already dead */ }
-  const freshSession = openAppSession.openAppSession({
-    appId: frontendParams.appId,
-    hostConfig: getFrontendHostConfig(userId),
-    identity: `recover-${Date.now()}`,
-    withoutData: false,
-  });
-  const doc = await freshSession.getDoc();
-  console.log('[QIX] Fresh session established');
-  return await callback(doc);
 }
 
 // OData filter string safety (email must not break the quoted literal)
@@ -310,9 +264,8 @@ app.post("/config", [requireAuth, csrfProtection], (req, res) => {
 // Return the list of sheets in the Qlik app
 app.get("/app-sheets", requireAuth, async (req, res) => {
   try {
-    const sheetList = await withQlikDoc(req.session.userId, async (app) => {
-      return app.getSheetList();
-    });
+    const doc = await getQlikAppSession(req.session.userId).getDoc();
+    const sheetList = await doc.getSheetList();
     res.json(sheetList);
   } catch (err) {
     console.error("Sheet error:", err);
@@ -329,63 +282,39 @@ app.get("/app-sheets", requireAuth, async (req, res) => {
 
 app.get("/hypercube", requireAuth, async (req, res) => {
   try {
-    const result = await withQlikDoc(req.session.userId, async (app) => {
-      // Hypercube properties
-      const properties = {
-        qInfo: {
-          qType: "my-straight-hypercube",
-        },
-        qHyperCubeDef: {
-          qDimensions: [
-            { qDef: { qFieldDefs: [appSettings.hypercubeDimension] } },
-          ],
-          qMeasures: [
-            { qDef: { qDef: appSettings.hypercubeMeasure } },
-          ],
-          qInitialDataFetch: [
-            { qHeight: 10, qWidth: 2 },
-          ],
-        },
-      };
+    const doc = await getQlikAppSession(req.session.userId).getDoc();
+    const properties = {
+      qInfo: { qType: "my-straight-hypercube" },
+      qHyperCubeDef: {
+        qDimensions: [{ qDef: { qFieldDefs: [appSettings.hypercubeDimension] } }],
+        qMeasures: [{ qDef: { qDef: appSettings.hypercubeMeasure } }],
+        qInitialDataFetch: [{ qHeight: 10, qWidth: 2 }],
+      },
+    };
 
-      // Extract hypercube data
-      const model = await app.createSessionObject(properties);
-      try {
-        const layout = await model.getLayout();
-        let data = layout.qHyperCube.qDataPages[0].qMatrix;
+    const model = await doc.createSessionObject(properties);
+    try {
+      const layout = await model.getLayout();
+      let data = layout.qHyperCube.qDataPages[0].qMatrix;
 
-        // Get additional pages if needed
-        const columns = layout.qHyperCube.qSize.qcx;
-        const totalHeight = layout.qHyperCube.qSize.qcy;
-        const pageHeight = 5;
-        const numberOfPages = Math.ceil(totalHeight / pageHeight);
+      const columns = layout.qHyperCube.qSize.qcx;
+      const totalHeight = layout.qHyperCube.qSize.qcy;
+      const pageHeight = 5;
+      const numberOfPages = Math.ceil(totalHeight / pageHeight);
 
-        for (let i = 1; i < numberOfPages; i++) {
-          const page = {
-            qTop: pageHeight * i,
-            qLeft: 0,
-            qWidth: columns,
-            qHeight: pageHeight,
-          };
-          const row = await model.getHyperCubeData("/qHyperCubeDef", [page]);
-          data.push(...row[0].qMatrix);
-        }
-
-        // Transform data for front-end consumption
-        return {
-          returnedDimension: data.map(row => row[0].qText),
-          returnedMeasure: data.map(row => row[1].qText),
-        };
-      } finally {
-        try {
-          await app.destroySessionObject(model.id);
-        } catch (destroyErr) {
-          console.warn("[hypercube] destroySessionObject failed:", destroyErr);
-        }
+      for (let i = 1; i < numberOfPages; i++) {
+        const page = { qTop: pageHeight * i, qLeft: 0, qWidth: columns, qHeight: pageHeight };
+        const row = await model.getHyperCubeData("/qHyperCubeDef", [page]);
+        data.push(...row[0].qMatrix);
       }
-    });
 
-    res.json(result);
+      res.json({
+        returnedDimension: data.map(row => row[0].qText),
+        returnedMeasure: data.map(row => row[1].qText),
+      });
+    } finally {
+      try { await doc.destroySessionObject(model.id); } catch { /* ignore */ }
+    }
   } catch (err) {
     console.error("Hypercube error:", err);
     const statusCode = err.status || err.statusCode || 500;
@@ -402,17 +331,10 @@ app.get("/hypercube", requireAuth, async (req, res) => {
 // Return the authenticated Qlik user as seen from the current app session
 app.get("/user-attributes", requireAuth, async (req, res) => {
   try {
-    const result = await withQlikDoc(req.session.userId, async (app) => {
-      const evaluated = await app.evaluateEx("=OSUser()");
-      const qlikUserId = String(evaluated.qText ?? "");
-
-      return {
-        sessionUserId: req.session.userId,
-        qlikUserId,
-      };
-    });
-
-    res.json(result);
+    const doc = await getQlikAppSession(req.session.userId).getDoc();
+    const evaluated = await doc.evaluateEx("=OSUser()");
+    const qlikUserId = String(evaluated.qText ?? "");
+    res.json({ sessionUserId: req.session.userId, qlikUserId });
   } catch (err) {
     console.error("User attributes error:", err);
     const statusCode = err.status || err.statusCode || 500;
