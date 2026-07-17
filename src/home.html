@@ -322,8 +322,6 @@
 
     <script type="module">
 
-      import { qix } from "https://cdn.jsdelivr.net/npm/@qlik/api@2/index.js";
-
       /** Human-readable message for thrown API objects or Errors (see getHypercube in script.js). */
       function formatFetchError(error) {
         if (error == null) return 'Unknown error';
@@ -363,10 +361,6 @@
           }
         }, 120);
       }
-
-      // @qlik/api app session — reuses the WebSocket opened by qlik-embed web components.
-      // Initialized after embeds load; used for keepalive pings.
-      let qixSession = null;
 
       // Show/hide page sections based on sidebar navigation clicks
       function addEventListeners() {
@@ -515,7 +509,6 @@
         script.setAttribute('data-host', configParams.tenantUri);
         script.setAttribute('data-client-id', configParams.oAuthFrontEndClientId);
         script.setAttribute('data-get-access-token', 'getAccessToken');
-        script.setAttribute('data-on-websocket-event', 'onQlikWebSocketEvent');
         script.setAttribute('data-auth-type', 'OAuth2');
         document.head.appendChild(script);
       }
@@ -609,96 +602,7 @@
         );
       }
 
-      // Return all qlik-embed elements except ai/* UIs
-      function getNonAiEmbeds() {
-        return [...document.querySelectorAll('qlik-embed')].filter(
-          el => !el.getAttribute('ui')?.startsWith('ai/')
-        );
-      }
-
-      // Refresh all non-AI embeds (they share one WebSocket, so all are affected)
-      function refreshAllEmbeds() {
-        for (const embed of getNonAiEmbeds()) {
-          showRefreshOverlay(embed);
-        }
-      }
-
-      // Display a "Reconnecting…" overlay over the embed, then auto-refresh after 1.5 s
-      function showRefreshOverlay(embedEl) {
-        const container = embedEl.parentElement;
-        if (!container || container.querySelector('.session-error-overlay')) return;
-
-        const ui = embedEl.getAttribute('ui') || embedEl.getAttribute('id') || 'unknown';
-        console.log(`[EmbedRefresh] [${ui}] Showing reconnecting overlay, will auto-refresh in 1.5s`);
-
-        const overlay = document.createElement('div');
-        overlay.className = 'session-error-overlay';
-        overlay.textContent = 'Reconnecting…';
-        container.appendChild(overlay);
-
-        setTimeout(() => refreshEmbed(embedEl, overlay), 1500);
-      }
-
-      // Remove the old qlik-embed element and replace it with a fresh one
-      function refreshEmbed(embedEl, overlay) {
-        const ui = embedEl.getAttribute('ui') || embedEl.getAttribute('id') || 'unknown';
-        console.log(`[EmbedRefresh] [${ui}] Removing overlay and re-creating embed element`);
-        overlay.remove();
-        const container = embedEl.parentElement;
-        const attrs = Object.fromEntries(Array.from(embedEl.attributes).map(a => [a.name, a.value]));
-        embedEl.remove();
-        const newEmbed = createEmbed(attrs);
-        container.appendChild(newEmbed);
-        console.log(`[EmbedRefresh] [${ui}] New embed element appended to DOM`);
-      }
-
-      // Global WebSocket event handler registered via data-on-websocket-event.
-      // Only triggers embed recovery for close code 4001 (QlikIdleTimeout).
-      window.onQlikWebSocketEvent = function onQlikWebSocketEvent(event) {
-        if (event.type === 'closed') {
-          const code = event.code ?? event.detail?.code;
-          console.warn(`[WebSocket] Connection CLOSED (code: ${code})`, event);
-          if (code === 4001) {
-            console.warn('[WebSocket] Session idle timeout (4001) — refreshing all embeds');
-            refreshAllEmbeds();
-          }
-        } else if (event.type === 'error') {
-          console.error('[WebSocket] Connection ERROR (no recovery action)', event);
-        } else {
-          console.log('[WebSocket]', event.type, event);
-        }
-      };
-
-      // Race a promise against a timeout and reject if the timeout fires first
-      function withTimeout(promise, ms) {
-        return Promise.race([
-          promise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timed out')), ms)),
-        ]);
-      }
-
-      // Ping the engine every 2 minutes via @qlik/api to prevent idle timeout (4001).
-      // On failure, logs the error. @qlik/api auto-reconnect handles transient failures;
-      // if the session is truly dead, the 4001 WebSocket close event triggers recovery.
-      function setupKeepAlive() {
-        setInterval(async () => {
-          if (!qixSession) return;
-          try {
-            const doc = await withTimeout(qixSession.getDoc(), 10000);
-            const tempObj = await withTimeout(doc.createSessionObject({
-              qInfo: { qType: 'keepalive-ping' },
-            }), 10000);
-            const handle = tempObj.id || tempObj.qInfo?.qId;
-            if (handle) {
-              await withTimeout(doc.destroySessionObject(handle), 10000);
-            }
-          } catch (err) {
-            console.warn('[KeepAlive] Engine ping failed (auto-reconnect will retry):', err);
-          }
-        }, 2 * 60 * 1000);
-      }
-
-      // Initialize the page: fetch config, render embeds, set up keepalive, load data
+      // Initialize the page: fetch config, render embeds, load data
       document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById('footer-year').textContent = new Date().getFullYear();
 
@@ -716,12 +620,6 @@
           renderQlikEmbeds(configParams);
 
           updateHeaders(configParams);
-
-          // Open a @qlik/api session that reuses the qlik-embed WebSocket connection.
-          // Actual connection happens lazily on first getDoc() call (keepalive ping).
-          qixSession = qix.openAppSession({ appId: configParams.appId });
-
-          setupKeepAlive();
 
           document.getElementById('refresh-data-btn').addEventListener('click', () => updateTable());
 
