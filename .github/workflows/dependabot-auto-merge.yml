@@ -7,7 +7,6 @@ on:
     types: [completed]
 
 permissions:
-  contents: write
   pull-requests: write
 
 jobs:
@@ -26,9 +25,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enable auto-merge when checks pass
+        if: github.event_name == 'check_suite'
         uses: peter-evans/enable-pull-request-automerge@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          pull-request-number: ${{ github.event.pull_request.number || github.event.check_suite.pull_requests[0].number }}
+          pull-request-number: ${{ github.event.check_suite.pull_requests[0].number }}
           merge-method: squash
