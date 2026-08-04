@@ -1,0 +1,33 @@
+name: Dependabot Auto Approve and Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted]
+  check_suite:
+    types: [completed]
+  status: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-approve-and-merge:
+    if: github.event.pull_request.user.login == 'dependabot[bot]' || github.event.check_suite.pull_requests[0].user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto approve Dependabot PR
+        uses: hmarr/auto-approve-action@v4
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge when checks pass
+        uses: peter-evans/enable-pull-request-automerge@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          pull-request-number: ${{ github.event.pull_request.number || github.event.check_suite.pull_requests[0].number }}
+          merge-method: squash
