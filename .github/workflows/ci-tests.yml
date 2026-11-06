@@ -23,6 +23,13 @@ jobs:
           node-version: '24'
           cache: 'npm'
       
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      # Written after installs so dependency install scripts can't read the secrets
       - name: Download environment file
         run: |
           # Use here-document to safely handle special characters
@@ -30,12 +37,6 @@ jobs:
           ${{ secrets.env }}
           EOF
           echo "Environment file downloaded from secrets"
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
 
       - name: Run Playwright tests
         run: npx playwright test --reporter=html
