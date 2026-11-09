@@ -60,8 +60,8 @@ async function freshCsrf(request) {
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 test.describe('Backend Health & Diagnostics', () => {
-  // Use a single APIRequestContext that persists cookies across tests
-  // so we only need to log in once.
+  // Serial so the numbered checks run in order and stop at the first broken layer.
+  // Each test gets its own `request` context (cookies are not shared), so tests log in themselves.
   test.describe.configure({ mode: 'serial' });
 
   // Skip in non-chromium browsers — these are pure HTTP/API tests.
@@ -110,18 +110,16 @@ test.describe('Backend Health & Diagnostics', () => {
       headers: { 'CSRF-Token': csrf },
     });
 
-    if (res.status() === 401) {
-      const body = await res.text();
-      const msg = 'FAIL: POST /access-token returned 401.\n' +
-        'The frontend (impersonation) OAuth client cannot mint a token.\n' +
+    // 502 = the server could not mint a token (401 would mean the session was lost)
+    const hint = res.status() === 502
+      ? 'The frontend (impersonation) OAuth client cannot mint a token.\n' +
         'Check OAUTH_FRONTEND_CLIENT_ID / OAUTH_FRONTEND_CLIENT_SECRET and\n' +
-        'ensure the client has the "impersonation" grant type enabled on the tenant.\n' +
-        `Response: ${body}`;
-      console.log(msg);
-      test.fail(true, msg);
-    }
-
-    expect(res.status(), `POST /access-token returned ${res.status()}`).toBe(200);
+        'ensure the client has the "impersonation" grant type enabled on the tenant.\n'
+      : '';
+    expect(
+      res.status(),
+      `POST /access-token returned ${res.status()}.\n${hint}Response: ${res.status() === 200 ? '' : await res.text()}`
+    ).toBe(200);
     const token = await res.text();
     expect(token.length, 'Access token should be a non-trivial string').toBeGreaterThan(20);
 

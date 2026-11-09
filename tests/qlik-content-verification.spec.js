@@ -9,6 +9,19 @@ async function login(page) {
   await page.waitForLoadState('domcontentloaded');
 }
 
+/**
+ * The sheet dropdown stays empty when /app-sheets fails (Qlik engine unavailable).
+ * Locally that skips the test; on CI it fails, so an outage never shows up as green.
+ */
+function skipOrFailIfEngineUnavailable(sheetsLoaded) {
+  const reason = 'Qlik engine unavailable: sheet dropdown not populated (/app-sheets returned an error)';
+  if (!process.env.CI) {
+    test.skip(!sheetsLoaded, reason);
+    return;
+  }
+  expect(sheetsLoaded, reason).toBe(true);
+}
+
 async function openSection(page, href) {
   await page.click(`a[href="${href}"]`);
   const sectionId = href.replace('#', '');
@@ -85,11 +98,7 @@ test.describe('Qlik Content Verification', () => {
       { timeout: 30000 }
     ).then(() => true).catch(() => false);
 
-    if (!sheetsLoaded) {
-      console.log('SKIP: Sheet dropdown not populated — Qlik engine unavailable');
-      test.skip(true, 'Qlik engine unavailable: /app-sheets returned an error');
-      return;
-    }
+    skipOrFailIfEngineUnavailable(sheetsLoaded);
     console.log('PASS: Sheet dropdown populated');
 
     // Wait for the initial sheet to render
@@ -194,11 +203,7 @@ test.describe('Qlik Content Verification', () => {
       { timeout: 30000 }
     ).then(() => true).catch(() => false);
 
-    if (!sheetsLoaded) {
-      console.log('SKIP: Sheet dropdown not populated — Qlik engine unavailable');
-      test.skip(true, 'Qlik engine unavailable: /app-sheets returned an error');
-      return;
-    }
+    skipOrFailIfEngineUnavailable(sheetsLoaded);
 
     await page.waitForSelector('text=Margin Amount Over Time', { timeout: 60000 });
     console.log('PASS: Initial sheet content loaded');
@@ -247,27 +252,5 @@ test.describe('Qlik Content Verification', () => {
     const iframe = page.frameLocator('#classic-app iframe');
     await iframe.locator('text=Margin Amount Over Time').waitFor({ timeout: 60000 });
     console.log('PASS: Classic app iframe content loaded');
-  });
-
-  // ─── Graceful loading: embed element is always present while content loads ─
-
-  test('should handle Qlik content loading gracefully', async ({ page }) => {
-    await login(page);
-
-    await page.click('a[href="#sheet-nav"]');
-    await expect(page.locator('#sheet-nav')).toBeVisible();
-
-    // The embed element must be present immediately (before content renders)
-    const qlikEmbed = page.locator('qlik-embed[ui="analytics/sheet"]');
-    await expect(qlikEmbed).toBeAttached();
-    console.log('PASS: Qlik embed element is present');
-
-    try {
-      await page.waitForSelector('text=Margin Amount Over Time', { timeout: 60000 });
-      console.log('PASS: Content loaded within expected timeframe');
-    } catch {
-      console.log('INFO: Content still loading after 60 s — embed element is present');
-      await page.screenshot({ path: 'test-results/content-loading-debug.png' });
-    }
   });
 });
