@@ -49,7 +49,9 @@ jobs:
           retention-days: 7
 
   # Live end-to-end tests against the Qlik Cloud tenant configured in the `env` secret.
+  # Runs only after the hermetic job passes, so a failing PR doesn't spend tenant calls or login rate-limit quota.
   test:
+    needs: hermetic
     runs-on: ubuntu-latest
 
     steps:

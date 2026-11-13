@@ -1,6 +1,6 @@
 # Tests for Qlik Cloud Embed OAuth Impersonation
 
-Two suites live here:
+Three suites live here:
 
 - **`unit/`** — hermetic server tests (`node:test` + supertest). `@qlik/api` is replaced by a stub
   (`support/qlik-stub.js` → `createQlikStub()`), so they need no `.env` or tenant. Run with `npm run test:unit`
@@ -10,6 +10,10 @@ Two suites live here:
   with `page.route()`. Run with `npm run test:browser` (config: `playwright.browser.config.js`).
 - **`*.spec.js`** — Playwright end-to-end tests that run against a **live** Qlik Cloud tenant.
   They require valid `.env` credentials (or CI secrets) and a running server. Run with `npm run test:e2e`.
+
+`npm test` runs all three in order (unit, browser, then end-to-end). Without a configured `.env`, the first
+two pass and the end-to-end step fails; use `npm run test:unit` and `npm run test:browser` on their own if you
+don't have a tenant.
 
 `support/qlik-stub.js` holds the shared `@qlik/api` stub and test env.
 

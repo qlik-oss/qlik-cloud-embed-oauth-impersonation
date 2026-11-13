@@ -222,7 +222,7 @@ There are three test suites:
 - **End-to-end tests** (`tests/*.spec.js`, Playwright) verify authentication, impersonation and content rendering against a live Qlik Cloud tenant, so they require a configured `.env` file.
 
 ```shell
-# Run all three suites
+# Run all three suites (unit, browser, then end-to-end; the last one needs a configured .env)
 npm test
 
 # Server tests only (no tenant needed), optionally with a coverage report
