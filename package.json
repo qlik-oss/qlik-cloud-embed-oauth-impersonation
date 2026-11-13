@@ -6,7 +6,10 @@
     "type": "git",
     "url": "https://github.com/qlik-oss/qlik-cloud-embed-oauth-impersonation.git"
   },
-  "homepage": "https://github.com/qlik-oss/qlik-cloud-embed-oauth-impersonation",
+  "engines": {
+    "node": ">=22"
+  },
+  "homepage":"https://github.com/qlik-oss/qlik-cloud-embed-oauth-impersonation",
   "bugs": {
     "url": "https://github.com/qlik-oss/qlik-cloud-embed-oauth-impersonation/issues"
   },

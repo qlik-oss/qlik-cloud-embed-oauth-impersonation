@@ -39,7 +39,7 @@ For local runs over **http://localhost**, keep `NODE_ENV=development` in `.env` 
 
 | File | What it covers |
 |------|---------------|
-| `backend-health.spec.js` | Server reachability, CSRF, login/user provisioning, impersonation token (`subType: user`), `/config` contents with no secrets, QIX engine endpoints (`/app-sheets`, `/hypercube` with no duplicate rows, `/user-attributes` showing the impersonated user), CSRF enforcement, logout, and the 401 contract. Logs in once and runs in order. Chromium only (pure HTTP). |
+| `backend-health.spec.js` | Server reachability, CSRF, login/user provisioning, impersonation token (`subType: user`), `/config` contents with no secrets, QIX engine endpoints (`/app-sheets`, `/hypercube`, `/user-attributes` showing the impersonated user), CSRF enforcement, logout, and the 401 contract. Logs in once and runs in order. Chromium only (pure HTTP). |
 | `core-functionality.spec.js` | Authentication flow (redirect → login → logout), sidebar navigation to every section, and the data panel refresh workflow (loading state, timestamp, session badge). |
 | `fixtures.js` | Shared `test` that logs in once per worker and reuses the session, to stay under the login rate limit. |
 | `qlik-content-verification.spec.js` | Embed element presence for all UI types, sheet navigation, on-the-fly chart type switching, and content display with expected data values. If `/app-sheets` fails, the sheet tests skip locally but **fail on CI**. |

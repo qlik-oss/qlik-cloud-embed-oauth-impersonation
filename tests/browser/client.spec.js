@@ -198,7 +198,13 @@ test.describe('navigation and session', () => {
 
   test('redirects to /login when /config reports an expired session on first load', async ({ page }) => {
     await page.route('**/config', (route) => route.fulfill({ status: 401, json: { error: 'session_expired' } }));
-    await login(page).catch(() => {}); // the redirect can win the race with the "/" assertion
+    // Not login(): the redirect can win the race with its "/" assertion. Waiting for the
+    // /config request proves login succeeded and the home page asked for its config.
+    const configRequested = page.waitForRequest('**/config');
+    await page.goto('/login');
+    await expect(page.locator('#loginButton')).toBeEnabled();
+    await page.click('#loginButton');
+    await configRequested;
     await expect(page).toHaveURL(/\/login$/);
   });
 

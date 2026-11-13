@@ -36,7 +36,7 @@ It showcases several embedding techniques, such as:
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org) version 20 or higher
+- [Node.js](https://nodejs.org) version 22 or higher
 - An [OAuth M2M client](https://qlik.dev/authenticate/oauth/create/create-oauth-client/) for the backend calls, configured with:
     - Scopes: `user_default`, `admin_classic`
     - Allowed origins: must match your app origin exactly (scheme, host, and port). For the default `PORT=3000` use `http://localhost:3000`. If you change `PORT`, update both OAuth clients (for example `http://localhost:8080`).

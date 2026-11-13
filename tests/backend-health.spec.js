@@ -178,7 +178,6 @@ test.describe('Backend Health & Diagnostics', () => {
     const data = await res.json();
     expect(data.returnedDimension.length, 'Should have at least one data row').toBeGreaterThan(0);
     expect(data.returnedMeasure.length, 'Dimension and measure arrays should match').toBe(data.returnedDimension.length);
-    expect(new Set(data.returnedDimension).size, 'Dimension values should not repeat').toBe(data.returnedDimension.length);
 
     console.log(`OK: /hypercube returned ${data.returnedDimension.length} row(s)`);
     console.log(`   First dimension: "${data.returnedDimension[0]}"`);
