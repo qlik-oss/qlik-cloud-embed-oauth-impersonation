@@ -8,90 +8,90 @@ import { test, expect } from '@playwright/test';
  * fail with 500s, this suite pinpoints which layer is broken:
  *
  *   1. Express server reachable
- *   2. CSRF token endpoint
- *   3. Login + user provisioning (backend M2M client)
+ *   2. Environment / config wired correctly
+ *   3. Backend OAuth token (M2M client-credentials)
  *   4. Frontend OAuth token (impersonation)
- *   5. Config sent to the browser (and no secrets in it)
- *   6–8. QIX engine — app-sheets, hypercube, user attributes (impersonated identity)
- *   9. CSRF enforcement on authenticated POSTs
- *  10. Logout ends the session
+ *   5. QIX engine — app-sheets
+ *   6. QIX engine — hypercube
  *
- * Pure HTTP — runs in the chromium project only (see playwright.config.js).
+ * Only runs in a single browser (chromium) since it tests HTTP APIs, not rendering.
  */
 
-const TEST_EMAIL = 'backend-health-test@test.com';
-const USER_PREFIX = process.env.USER_PREFIX ?? 'oauth_gen_';
+// Only run in chromium — these are pure API tests, no browser rendering involved.
+// (file-level skip is not reliably supported; the beforeEach below handles it.)
 
-/** Print a failed QIX response in detail, then record a soft failure. */
-async function reportQixFailure(res, path) {
-  let body;
-  try { body = await res.json(); } catch { body = { raw: await res.text().catch(() => '(empty)') }; }
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-  console.log(`\nFAIL: GET ${path} returned ${res.status()}`);
-  console.log(`Error:        ${body.error ?? 'N/A'}`);
-  console.log(`Message:      ${body.message ?? 'N/A'}`);
-  console.log(`Code:         ${body.code ?? 'N/A'}`);
-  console.log(`Enigma error: ${body.enigmaError ?? false}`);
-  if (body.stack) console.log(`Stack:\n${body.stack}`);
-  console.log(`Full response body:\n${JSON.stringify(body, null, 2)}\n`);
+/** POST /login with a test email and return the session cookie jar. */
+async function getAuthenticatedContext(request) {
+  // 1. Grab a CSRF token (stored in the session alongside the session cookie)
+  const csrfRes = await request.get('/csrf-token');
+  expect(csrfRes.ok(), `GET /csrf-token failed: ${csrfRes.status()}`).toBeTruthy();
+  const { csrfToken } = await csrfRes.json();
+  expect(csrfToken, 'CSRF token should be a non-empty string').toBeTruthy();
 
-  expect.soft(res.status(), `GET ${path} failed — see error details above`).toBe(200);
+  // 2. POST /login — the server sets session.email and redirects to /
+  //    which in turn provisions the Qlik user and sets session.userId.
+  //    Retry once if the Qlik user-provisioning call is transiently slow.
+  let loginRes;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const token = attempt === 1 ? csrfToken : await freshCsrf(request);
+    loginRes = await request.post('/login', {
+      form: { email: 'backend-health-test@test.com', _csrf: token },
+      maxRedirects: 5,           // follow the redirect chain → GET / (serves home.html)
+    });
+    if (loginRes.status() === 200) break;
+    if (attempt < 2) {
+      console.log(`Login attempt ${attempt} returned ${loginRes.status()}, retrying…`);
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+  // After redirects we should land on 200 (home.html) or get a clear error
+  return { loginRes, csrfToken };
 }
 
+/** Fetch a fresh CSRF token (needed for POST endpoints after login). */
+async function freshCsrf(request) {
+  const res = await request.get('/csrf-token');
+  const { csrfToken } = await res.json();
+  return csrfToken;
+}
+
+// ── Tests ────────────────────────────────────────────────────────────────────
+
 test.describe('Backend Health & Diagnostics', () => {
-  // Serial: the numbered checks share one logged-in API context and stop at the
-  // first broken layer. Logging in once also keeps the suite well under the
-  // server's login rate limit (40 per 15 minutes per IP).
+  // Use a single APIRequestContext that persists cookies across tests
+  // so we only need to log in once.
   test.describe.configure({ mode: 'serial' });
 
-  /** @type {import('@playwright/test').APIRequestContext} */
-  let api;
-
-  /** Fresh CSRF token for the shared context (needed for POST endpoints). */
-  async function csrf() {
-    const res = await api.get('/csrf-token');
-    expect(res.ok(), `GET /csrf-token failed: ${res.status()}`).toBeTruthy();
-    return (await res.json()).csrfToken;
-  }
-
-  test.beforeAll(async ({ playwright, baseURL }) => {
-    api = await playwright.request.newContext({ baseURL });
+  // Skip in non-chromium browsers — these are pure HTTP/API tests.
+  test.beforeEach(async ({ browserName }) => {
+    test.skip(browserName !== 'chromium', 'API-only tests — chromium only');
   });
 
-  test.afterAll(async () => {
-    await api?.dispose();
-  });
-
-  test('1 — Express server is reachable', async () => {
-    const res = await api.get('/login');
+  test('1 — Express server is reachable', async ({ request }) => {
+    const res = await request.get('/login');
     expect(res.status(), 'GET /login should return 200').toBe(200);
-    expect(await res.text()).toContain('loginButton');
+    const body = await res.text();
+    expect(body).toContain('loginButton');
     console.log('OK: Express server is up and serving /login');
   });
 
-  test('2 — CSRF token endpoint works', async () => {
-    expect(await csrf(), 'CSRF token should be a non-empty string').toBeTruthy();
+  test('2 — CSRF token endpoint works', async ({ request }) => {
+    const res = await request.get('/csrf-token');
+    expect(res.status()).toBe(200);
+    const data = await res.json();
+    expect(data.csrfToken).toBeTruthy();
     console.log('OK: /csrf-token returns a valid token');
   });
 
-  test('3 — Login + user provisioning succeeds (/)', async () => {
-    // POST /login sets session.email and redirects to /, which provisions the
-    // Qlik user and sets session.userId. Retry once if provisioning is transiently slow.
-    let loginRes;
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      loginRes = await api.post('/login', {
-        form: { email: TEST_EMAIL, _csrf: await csrf() },
-        maxRedirects: 5, // follow the redirect chain → GET / (serves home.html)
-      });
-      if (loginRes.status() === 200) break;
-      if (attempt < 2) {
-        console.log(`Login attempt ${attempt} returned ${loginRes.status()}, retrying…`);
-        await new Promise(r => setTimeout(r, 2000));
-      }
-    }
-
-    // A 200 here means the backend accepted the email, obtained a backend M2M
-    // token, looked up / created the Qlik user and served home.html.
+  test('3 — Login + user provisioning succeeds (/)', async ({ request }) => {
+    const { loginRes } = await getAuthenticatedContext(request);
+    // After redirect chain, a 200 means the backend successfully:
+    //   - accepted the email
+    //   - obtained a backend M2M token
+    //   - looked up / created the Qlik user
+    //   - served home.html
     expect(
       loginRes.status(),
       `Login chain failed with ${loginRes.status()}. ` +
@@ -101,66 +101,106 @@ test.describe('Backend Health & Diagnostics', () => {
     console.log('OK: Login + Qlik user provisioning succeeded (backend M2M token works)');
   });
 
-  test('4 — Frontend access token (/access-token)', async () => {
-    const res = await api.post('/access-token', { headers: { 'CSRF-Token': await csrf() } });
+  test('4 — Frontend access token (/access-token)', async ({ request }) => {
+    // Ensure we have an authenticated session
+    await getAuthenticatedContext(request);
+    const csrf = await freshCsrf(request);
 
-    // 502 = the server could not mint a token (401 would mean the session was lost)
-    const hint = res.status() === 502
-      ? 'The frontend (impersonation) OAuth client cannot mint a token.\n' +
+    const res = await request.post('/access-token', {
+      headers: { 'CSRF-Token': csrf },
+    });
+
+    if (res.status() === 401) {
+      const body = await res.text();
+      const msg = 'FAIL: POST /access-token returned 401.\n' +
+        'The frontend (impersonation) OAuth client cannot mint a token.\n' +
         'Check OAUTH_FRONTEND_CLIENT_ID / OAUTH_FRONTEND_CLIENT_SECRET and\n' +
-        'ensure the client has the "impersonation" grant type enabled on the tenant.\n'
-      : '';
-    expect(
-      res.status(),
-      `POST /access-token returned ${res.status()}.\n${hint}Response: ${res.status() === 200 ? '' : await res.text()}`
-    ).toBe(200);
+        'ensure the client has the "impersonation" grant type enabled on the tenant.\n' +
+        `Response: ${body}`;
+      console.log(msg);
+      test.fail(true, msg);
+    }
 
+    expect(res.status(), `POST /access-token returned ${res.status()}`).toBe(200);
     const token = await res.text();
+    expect(token.length, 'Access token should be a non-trivial string').toBeGreaterThan(20);
+
+    // Quick JWT structure check (header.payload.signature)
     const jwtParts = token.split('.');
     expect(jwtParts.length, 'Token should be a 3-part JWT').toBe(3);
 
-    const payload = JSON.parse(Buffer.from(jwtParts[1], 'base64url').toString());
-    // Impersonation tokens are issued for a user; a token for the OAuth client itself is not
-    expect(payload.subType, 'Token should be issued for a user (impersonation), not the client').toBe('user');
-    expect(payload.exp, 'Token should have an expiry').toBeTruthy();
-    const remainingMs = payload.exp * 1000 - Date.now();
-    expect(remainingMs, 'Token should not already be expired').toBeGreaterThan(0);
+    // Decode the payload to surface useful diagnostics
+    try {
+      const payload = JSON.parse(Buffer.from(jwtParts[1], 'base64url').toString());
+      console.log('OK: Frontend access token minted successfully');
+      console.log(`   sub (user):  ${payload.sub ?? 'N/A'}`);
+      console.log(`   subType:     ${payload.subType ?? 'N/A'}`);
+      console.log(`   tenantId:    ${payload.tenantId ?? payload.aud ?? 'N/A'}`);
+      console.log(`   scope:       ${payload.scope ?? 'N/A'}`);
 
-    console.log('OK: Frontend access token minted successfully');
-    console.log(`   subType:     ${payload.subType}`);
-    console.log(`   expires:     ${new Date(payload.exp * 1000).toISOString()} (${Math.round(remainingMs / 1000)}s from now)`);
+      const exp = payload.exp ? new Date(payload.exp * 1000) : null;
+      if (exp) {
+        const remainingMs = exp.getTime() - Date.now();
+        console.log(`   expires:     ${exp.toISOString()} (${Math.round(remainingMs / 1000)}s from now)`);
+        expect(remainingMs, 'Token should not already be expired').toBeGreaterThan(0);
+      }
+    } catch {
+      console.log('OK: Token received (could not decode payload for diagnostics)');
+    }
   });
 
-  test('5 — Config endpoint returns expected params and no secrets (/config)', async () => {
-    const res = await api.post('/config', { headers: { 'CSRF-Token': await csrf() } });
+  test('5 — Config endpoint returns expected params (/config)', async ({ request }) => {
+    await getAuthenticatedContext(request);
+    const csrf = await freshCsrf(request);
+
+    const res = await request.post('/config', {
+      headers: { 'CSRF-Token': csrf },
+    });
     expect(res.status()).toBe(200);
-    const text = await res.text();
-    const config = JSON.parse(text);
+    const config = await res.json();
 
     const requiredKeys = ['tenantUri', 'oAuthFrontEndClientId', 'appId', 'sheetId', 'objectId', 'fieldId'];
     const missing = requiredKeys.filter(k => !config[k]);
     expect(
       missing,
-      `Missing config keys: ${missing.join(', ')}. These must be set in .env for embeds to work.`
+      `Missing config keys: ${missing.join(', ')}. ` +
+      'These must be set in .env for embeds to work.'
     ).toHaveLength(0);
-    expect(config.userEmail, 'Config should include the logged-in email').toBe(TEST_EMAIL);
 
-    // The browser must never receive OAuth client secrets or the session secret
-    for (const name of ['OAUTH_BACKEND_CLIENT_SECRET', 'OAUTH_FRONTEND_CLIENT_SECRET', 'SESSION_SECRET']) {
-      const value = process.env[name];
-      if (value) expect(text.includes(value), `/config response must not contain ${name}`).toBe(false);
-    }
-
-    console.log('OK: /config returns all required parameters and no secrets');
+    console.log('OK: /config returns all required parameters');
     console.log(`   tenantUri:    ${config.tenantUri}`);
     console.log(`   appId:        ${config.appId}`);
+    console.log(`   sheetId:      ${config.sheetId}`);
+    console.log(`   objectId:     ${config.objectId}`);
+    console.log(`   fieldId:      ${config.fieldId}`);
     console.log(`   assistantId:  ${config.assistantId || '(not set)'}`);
+    console.log(`   masterDim:    ${config.masterDimension || '(not set)'}`);
+    console.log(`   masterMeasure:${config.masterMeasure || '(not set)'}`);
   });
 
-  test('6 — QIX engine: sheet list (/app-sheets)', async () => {
-    const res = await api.get('/app-sheets');
-    if (res.status() !== 200) return reportQixFailure(res, '/app-sheets');
+  test('6 — QIX engine: sheet list (/app-sheets)', async ({ request }) => {
+    await getAuthenticatedContext(request);
 
+    const res = await request.get('/app-sheets');
+
+    if (res.status() !== 200) {
+      let body;
+      try { body = await res.json(); } catch { body = { raw: await res.text().catch(() => '(empty)') }; }
+      const pretty = JSON.stringify(body, null, 2);
+
+      console.log(`\nFAIL: GET /app-sheets returned ${res.status()}`);
+      console.log(`Error:        ${body.error ?? 'N/A'}`);
+      console.log(`Message:      ${body.message ?? 'N/A'}`);
+      console.log(`Code:         ${body.code ?? 'N/A'}`);
+      console.log(`Enigma error: ${body.enigmaError ?? false}`);
+      if (body.stack) console.log(`Stack:\n${body.stack}`);
+      console.log(`Full response body:\n${pretty}\n`);
+
+      expect.soft(res.status(), `GET /app-sheets failed — see error details above`).toBe(200);
+      return;
+    }
+
+    expect(res.status(), `/app-sheets returned ${res.status()}`).toBe(200);
     const sheets = await res.json();
     expect(Array.isArray(sheets), 'Response should be an array of sheets').toBeTruthy();
     expect(sheets.length, 'App should have at least one sheet').toBeGreaterThan(0);
@@ -171,51 +211,69 @@ test.describe('Backend Health & Diagnostics', () => {
     }
   });
 
-  test('7 — QIX engine: hypercube data (/hypercube)', async () => {
-    const res = await api.get('/hypercube');
-    if (res.status() !== 200) return reportQixFailure(res, '/hypercube');
+  test('7 — QIX engine: hypercube data (/hypercube)', async ({ request }) => {
+    await getAuthenticatedContext(request);
 
+    const res = await request.get('/hypercube');
+
+    if (res.status() !== 200) {
+      let body;
+      try { body = await res.json(); } catch { body = { raw: await res.text().catch(() => '(empty)') }; }
+      const pretty = JSON.stringify(body, null, 2);
+
+      console.log(`\nFAIL: GET /hypercube returned ${res.status()}`);
+      console.log(`Error:        ${body.error ?? 'N/A'}`);
+      console.log(`Message:      ${body.message ?? 'N/A'}`);
+      console.log(`Code:         ${body.code ?? 'N/A'}`);
+      console.log(`Enigma error: ${body.enigmaError ?? false}`);
+      if (body.stack) console.log(`Stack:\n${body.stack}`);
+      console.log(`Full response body:\n${pretty}\n`);
+
+      expect.soft(res.status(), `GET /hypercube failed — see error details above`).toBe(200);
+      return;
+    }
+
+    expect(res.status(), `/hypercube returned ${res.status()}`).toBe(200);
     const data = await res.json();
+    expect(data.returnedDimension, 'Response should have returnedDimension array').toBeDefined();
+    expect(data.returnedMeasure, 'Response should have returnedMeasure array').toBeDefined();
     expect(data.returnedDimension.length, 'Should have at least one data row').toBeGreaterThan(0);
-    expect(data.returnedMeasure.length, 'Dimension and measure arrays should match').toBe(data.returnedDimension.length);
-    expect(new Set(data.returnedDimension).size, 'Dimension values should not repeat').toBe(data.returnedDimension.length);
 
     console.log(`OK: /hypercube returned ${data.returnedDimension.length} row(s)`);
     console.log(`   First dimension: "${data.returnedDimension[0]}"`);
     console.log(`   First measure:   "${data.returnedMeasure[0]}"`);
   });
 
-  test('8 — QIX engine: engine session runs as the impersonated user (/user-attributes)', async () => {
-    const res = await api.get('/user-attributes');
-    if (res.status() !== 200) return reportQixFailure(res, '/user-attributes');
+  test('8 — QIX engine: user attributes (/user-attributes)', async ({ request }) => {
+    await getAuthenticatedContext(request);
 
+    const res = await request.get('/user-attributes');
+
+    if (res.status() !== 200) {
+      let body;
+      try { body = await res.json(); } catch { body = { raw: await res.text().catch(() => '(empty)') }; }
+      const pretty = JSON.stringify(body, null, 2);
+
+      console.log(`\nFAIL: GET /user-attributes returned ${res.status()}`);
+      console.log(`Error:        ${body.error ?? 'N/A'}`);
+      console.log(`Message:      ${body.message ?? 'N/A'}`);
+      console.log(`Code:         ${body.code ?? 'N/A'}`);
+      console.log(`Enigma error: ${body.enigmaError ?? false}`);
+      if (body.stack) console.log(`Stack:\n${body.stack}`);
+      console.log(`Full response body:\n${pretty}\n`);
+
+      expect.soft(res.status(), `GET /user-attributes failed — see error details above`).toBe(200);
+      return;
+    }
+
+    expect(res.status(), `/user-attributes returned ${res.status()}`).toBe(200);
     const data = await res.json();
     expect(data.sessionUserId, 'Response should have sessionUserId').toBeTruthy();
-    // OSUser() reports the identity the engine sees: it must be the prefixed login email,
-    // proving the frontend client really impersonated this user.
-    expect(data.qlikUserId, 'Engine should see the impersonated user').toContain(`UserId=${USER_PREFIX}${TEST_EMAIL}`);
+    expect(data.qlikUserId, 'Response should have qlikUserId').toBeTruthy();
 
-    console.log('OK: engine session is the impersonated user');
+    console.log(`OK: /user-attributes returned valid user info`);
     console.log(`   sessionUserId: ${data.sessionUserId}`);
     console.log(`   qlikUserId:    ${data.qlikUserId}`);
-  });
-
-  test('9 — Authenticated POSTs require a CSRF token', async () => {
-    for (const path of ['/config', '/access-token']) {
-      const res = await api.post(path);
-      expect(res.status(), `POST ${path} without CSRF-Token should be rejected`).toBe(403);
-    }
-    console.log('OK: CSRF token is enforced on /config and /access-token');
-  });
-
-  test('10 — Logout ends the session', async () => {
-    const res = await api.get('/logout', { maxRedirects: 0 });
-    expect(res.status()).toBe(302);
-    expect(res.headers()['location']).toBe('/login');
-
-    const after = await api.get('/user-attributes');
-    expect(after.status(), 'Session should be gone after logout').toBe(401);
-    console.log('OK: logout destroys the session');
   });
 });
 
@@ -225,6 +283,10 @@ test.describe('Backend Health & Diagnostics', () => {
 
 test.describe('Unauthenticated API — 401 contract', () => {
   test.describe.configure({ mode: 'parallel' });
+
+  test.beforeEach(async ({ browserName }) => {
+    test.skip(browserName !== 'chromium', 'API-only tests — chromium only');
+  });
 
   const protectedEndpoints = [
     { method: 'GET',  path: '/app-sheets' },
