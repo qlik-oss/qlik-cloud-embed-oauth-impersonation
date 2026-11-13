@@ -9,9 +9,13 @@ on:
     branches: [main]
   workflow_dispatch: # Allow manual triggering
 
+# Read-only token: `npm ci` runs dependency install scripts, which must never get write access
+permissions:
+  contents: read
+
 jobs:
-  # Hermetic server tests: @qlik/api is stubbed, so no secrets or tenant are needed.
-  unit:
+  # Hermetic tests: @qlik/api is stubbed, so no secrets or tenant are needed.
+  hermetic:
     runs-on: ubuntu-latest
 
     steps:
@@ -29,6 +33,20 @@ jobs:
 
       - name: Run unit tests with coverage
         run: npm run test:coverage
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run hermetic browser tests (stub server)
+        run: npm run test:browser
+
+      - name: Upload browser test report
+        uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report-browser-${{ github.run_number }}
+          path: playwright-report-browser/
+          retention-days: 7
 
   # Live end-to-end tests against the Qlik Cloud tenant configured in the `env` secret.
   test:

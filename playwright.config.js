@@ -9,9 +9,10 @@ dotenv.config({ quiet: true });
  */
 export default defineConfig({
   testDir: './tests',
-  /* Playwright runs the *.spec.js files; tests/unit is the node:test suite (npm run test:unit). */
+  /* Live end-to-end specs only. tests/unit is the node:test suite (npm run test:unit) and
+     tests/browser has its own config with a stub server (npm run test:browser). */
   testMatch: '**/*.spec.js',
-  testIgnore: 'unit/**',
+  testIgnore: ['unit/**', 'browser/**'],
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -41,6 +42,8 @@ export default defineConfig({
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      /* backend-health is pure HTTP, so one browser is enough */
+      testIgnore: ['unit/**', 'browser/**', '**/backend-health.spec.js'],
     },
   ],
 
