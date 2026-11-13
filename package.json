@@ -29,16 +29,12 @@
     "express-session": "^1.18.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.65.0",
-    "supertest": "^7.3.2"
+    "@playwright/test": "^1.65.0"
   },
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "npm run test:unit && npm run test:e2e",
-    "test:unit": "node --test --test-reporter=spec \"tests/unit/**/*.test.js\"",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/app.js --test-coverage-include=server.js \"tests/unit/**/*.test.js\"",
-    "test:e2e": "playwright test",
+    "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:report": "playwright show-report"
   }

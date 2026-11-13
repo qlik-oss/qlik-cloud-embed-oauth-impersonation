@@ -138,7 +138,7 @@ You should see your web app running locally.
 This demo uses **two separate OAuth clients** to keep credentials scoped to their intended purpose:
 
 ```
-Browser                     Node.js server (src/app.js)         Qlik Cloud
+Browser                     Node.js server (server.js)          Qlik Cloud
   │                                   │                               │
   │  1. POST /login (email)           │                               │
   │──────────────────────────────────>│                               │
@@ -173,28 +173,25 @@ The browser never sees the OAuth client secrets. It only ever receives a short-l
 ## Project structure
 
 ```
-├── server.js               # Entry point: loads .env, validates it, starts the server
+├── server.js               # Express backend: auth flow, user provisioning, API routes
 ├── template.env            # Copy to .env and fill in your credentials
 ├── src/
-│   ├── app.js              # Express app: auth flow, user provisioning, API routes (createApp)
 │   ├── home.html           # Main dashboard (served only from GET / after user provisioning)
 │   ├── login.html          # Demo login (served from GET /login)
 │   ├── js/
 │   │   └── script.js       # Frontend helpers: getAccessToken, getConfig, getSheets, getHypercube, getUserAttributes
 │   ├── css/                # Served at /css (Express static)
 │   └── img/                # Served at /img
-└── tests/                  # Playwright end-to-end tests (*.spec.js) and unit/ (node:test)
+└── tests/                  # Playwright end-to-end tests
 ```
 
 Only `/css`, `/js`, and `/img` are mounted as static files. `home.html` is not served at `/home.html`, so use `/` after login so the server always runs user provisioning (`GET /`) before returning the dashboard.
 
-The route logic lives in `src/app.js` rather than `server.js` so the unit tests can build the app with a stubbed `@qlik/api` and no live tenant. `server.js` only loads `.env`, validates it, and starts listening.
-
 **Key entry points for reading the code:**
 
-- `src/app.js` — `normalizeTenantUri()`, the two OAuth configs, and `getFrontendHostConfig()`
-- `src/app.js` `POST /access-token` — how a user-scoped token is minted on each request
-- `src/app.js` `GET /` — how a Qlik user is looked up or created on first visit after login
+- `server.js` — `normalizeTenantUri()`, the two OAuth configs, and `getFrontendHostConfig()`
+- `server.js` `POST /access-token` — how a user-scoped token is minted on each request
+- `server.js` `GET /` — how a Qlik user is looked up or created on first visit after login
 - `src/js/script.js` `getAccessToken()` — the callback `qlik-embed` calls for tokens (must remain a global function)
 - `src/home.html` `updateHeaders()` — how `qlik-embed` is loaded and configured
 - `src/home.html` `renderQlikEmbeds()` — how `<qlik-embed>` elements and IDs are created at runtime
@@ -215,27 +212,17 @@ These align with [OAuth impersonation troubleshooting](https://qlik.dev/authenti
 
 ## Testing
 
-There are two test suites:
-
-- **Unit / server tests** (`tests/unit/`, [`node:test`](https://nodejs.org/api/test.html) + [supertest](https://github.com/ladjs/supertest)) exercise every route in `src/app.js` with `@qlik/api` stubbed out. They need no `.env` or tenant and run in about a second.
-- **End-to-end tests** (`tests/*.spec.js`, [Playwright](https://playwright.dev)) verify authentication and content rendering against a live Qlik Cloud tenant, so they require a configured `.env` file.
+The project includes [Playwright](https://playwright.dev) end-to-end tests that verify authentication and content rendering. Tests require a configured `.env` file pointing at a live Qlik Cloud tenant.
 
 ```shell
-# Run both suites
+# Run all tests (headless)
 npm test
 
-# Server tests only (no tenant needed), optionally with a coverage report
-npm run test:unit
-npm run test:coverage
-
-# End-to-end tests only (headless)
-npm run test:e2e
-
-# Watch end-to-end tests run in a real browser
-npm run test:e2e -- --headed
+# Watch tests run in a real browser
+npm test -- --headed
 
 # Open the interactive Playwright UI
-npm run test:ui
+npm test -- --ui
 
 # View the HTML test report after a run
 npm run test:report
