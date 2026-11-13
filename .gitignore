@@ -131,4 +131,5 @@ dist
 # Playwright
 test-results/
 playwright-report/
+playwright-report-browser/
 playwright/.auth/
