@@ -99,20 +99,19 @@
 
       try {
         const response = await fetch('/csrf-token');
-        if (!response.ok) {
-          throw new Error(`the server returned HTTP ${response.status}`);
+        if (response.ok) {
+          const data = await response.json();
+          document.getElementById('csrfToken').value = data.csrfToken;
+          document.getElementById('loginButton').disabled = false;
+        } else {
+          console.error('Error fetching CSRF token:', response.status);
+          // Enable the button anyway — the server will validate the CSRF token
+          document.getElementById('loginButton').disabled = false;
+          showError('Could not initialize security features. Try logging in or refresh the page.');
         }
-        const data = await response.json();
-        if (!data.csrfToken) {
-          throw new Error('the server response did not include a token');
-        }
-        document.getElementById('csrfToken').value = data.csrfToken;
       } catch (error) {
         console.error('CSRF init error:', error);
-        showError(`Could not get a security token (${error.message}). Refresh the page to try again.`);
-      } finally {
-        // Enable the button either way — the server validates the CSRF token on submit
-        document.getElementById('loginButton').disabled = false;
+        showError('Could not initialize security features: ' + error.message);
       }
     });
   </script>

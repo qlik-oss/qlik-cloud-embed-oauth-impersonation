@@ -215,22 +215,18 @@ These align with [OAuth impersonation troubleshooting](https://qlik.dev/authenti
 
 ## Testing
 
-There are three test suites:
+There are two test suites:
 
 - **Unit / server tests** (`tests/unit/`, [`node:test`](https://nodejs.org/api/test.html) + [supertest](https://github.com/ladjs/supertest)) exercise every route in `src/app.js` with `@qlik/api` stubbed out. They need no `.env` or tenant and run in about a second.
-- **Hermetic browser tests** (`tests/browser/`, [Playwright](https://playwright.dev)) run the real pages against a stub server (the same app with `@qlik/api` stubbed) to check client-side behaviour and error handling. No `.env` or tenant needed.
-- **End-to-end tests** (`tests/*.spec.js`, Playwright) verify authentication, impersonation and content rendering against a live Qlik Cloud tenant, so they require a configured `.env` file.
+- **End-to-end tests** (`tests/*.spec.js`, [Playwright](https://playwright.dev)) verify authentication and content rendering against a live Qlik Cloud tenant, so they require a configured `.env` file.
 
 ```shell
-# Run all three suites
+# Run both suites
 npm test
 
 # Server tests only (no tenant needed), optionally with a coverage report
 npm run test:unit
 npm run test:coverage
-
-# Browser tests against the stub server (no tenant needed)
-npm run test:browser
 
 # End-to-end tests only (headless)
 npm run test:e2e

@@ -1,5 +1,13 @@
-// Logs in once per worker and reuses the session (see fixtures.js)
-import { test, expect, openHome } from './fixtures.js';
+import { test, expect } from '@playwright/test';
+
+// Helper: log in and land on the home page
+async function login(page) {
+  await page.goto('/login');
+  await page.waitForSelector('#loginButton:not([disabled])', { timeout: 15000 });
+  await page.click('#loginButton');
+  await page.waitForURL('/', { timeout: 20000 });
+  await page.waitForLoadState('domcontentloaded');
+}
 
 /**
  * The sheet dropdown stays empty when /app-sheets fails (Qlik engine unavailable).
@@ -40,7 +48,7 @@ test.describe('Qlik Content Verification', () => {
   // ─── Embed elements presence ───────────────────────────────────────────────
 
   test('should verify Qlik embed elements are loaded', async ({ page }) => {
-    await openHome(page);
+    await login(page);
 
     // Sections whose qlik-embed element must be attached after navigation
     const sections = [
@@ -78,7 +86,7 @@ test.describe('Qlik Content Verification', () => {
   // ─── Lightweight sheet: navigate through every available sheet ─────────────
 
   test('should navigate between sheets in lightweight sheet experience', async ({ page }) => {
-    await openHome(page);
+    await login(page);
 
     await page.click('a[href="#sheet-nav"]');
     await expect(page.locator('#sheet-nav')).toBeVisible();
@@ -140,7 +148,7 @@ test.describe('Qlik Content Verification', () => {
   // ─── On-the-fly chart: cycle through all chart types ──────────────────────
 
   test('should change on-the-fly chart types and verify rendering', async ({ page }) => {
-    await openHome(page);
+    await login(page);
 
     await page.click('a[href="#on-the-fly"]');
     await expect(page.locator('#on-the-fly')).toBeVisible();
@@ -181,7 +189,7 @@ test.describe('Qlik Content Verification', () => {
   // ─── Content display: verify actual Qlik data appears on screen ───────────
 
   test('should verify Qlik content displays correctly', async ({ page }) => {
-    await openHome(page);
+    await login(page);
 
     // Lightweight Sheet — initial sheet and dropdown navigation
     console.log('Testing Lightweight Sheet...');

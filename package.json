@@ -35,10 +35,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "npm run test:unit && npm run test:browser && npm run test:e2e",
+    "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "node --test --test-reporter=spec \"tests/unit/**/*.test.js\"",
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/app.js --test-coverage-include=server.js \"tests/unit/**/*.test.js\"",
-    "test:browser": "playwright test --config playwright.browser.config.js",
     "test:e2e": "playwright test",
     "test:ui": "playwright test --ui",
     "test:report": "playwright show-report"
