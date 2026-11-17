@@ -29,7 +29,7 @@
     "express-session": "^1.18.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.65.0"
+    "@playwright/test": "^1.65.1"
   },
   "main": "server.js",
   "scripts": {
