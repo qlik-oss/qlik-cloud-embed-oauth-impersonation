@@ -1,13 +1,5 @@
-import { test, expect } from '@playwright/test';
-
-// Helper: log in and land on the home page
-async function login(page) {
-  await page.goto('/login');
-  await page.waitForSelector('#loginButton:not([disabled])', { timeout: 15000 });
-  await page.click('#loginButton');
-  await page.waitForURL('/', { timeout: 20000 });
-  await page.waitForLoadState('domcontentloaded');
-}
+// Logs in once per worker and reuses the session (see fixtures.js)
+import { test, expect, openHome } from './fixtures.js';
 
 async function waitForDataTableOrRecover(page) {
   const table = page.locator('#chart-data table');
@@ -49,27 +41,32 @@ test.describe('Core App Functionality', () => {
     });
   });
 
-  test('should handle authentication flow', async ({ page }) => {
-    // Unauthenticated access should redirect to login
-    await page.goto('/');
-    await page.waitForURL('/login', { timeout: 10000 });
-    console.log('PASS: Unauthenticated access redirected to login');
+  test.describe('without a saved session', () => {
+    // This test exercises login and logout itself, so start with no cookies
+    test.use({ storageState: { cookies: [], origins: [] } });
 
-    // Successful login redirects to home
-    await page.waitForSelector('#loginButton:not([disabled])', { timeout: 15000 });
-    await page.click('#loginButton');
-    await page.waitForURL('/', { timeout: 20000 });
-    console.log('PASS: Successfully logged in');
+    test('should handle authentication flow', async ({ page }) => {
+      // Unauthenticated access should redirect to login
+      await page.goto('/');
+      await page.waitForURL('/login', { timeout: 10000 });
+      console.log('PASS: Unauthenticated access redirected to login');
 
-    // Logout redirects back to login
-    await page.click('#navbarDropdown');
-    await page.click('a[href="/logout"]');
-    await page.waitForURL('/login', { timeout: 10000 });
-    console.log('PASS: Successfully logged out');
+      // Successful login redirects to home
+      await page.waitForSelector('#loginButton:not([disabled])', { timeout: 15000 });
+      await page.click('#loginButton');
+      await page.waitForURL('/', { timeout: 20000 });
+      console.log('PASS: Successfully logged in');
+
+      // Logout redirects back to login
+      await page.click('#navbarDropdown');
+      await page.click('a[href="/logout"]');
+      await page.waitForURL('/login', { timeout: 10000 });
+      console.log('PASS: Successfully logged out');
+    });
   });
 
   test('should navigate between Qlik sections', async ({ page }) => {
-    await login(page);
+    await openHome(page);
 
     const sections = [
       { href: '#sheet-nav', name: 'Lightweight Sheet' },
@@ -93,7 +90,7 @@ test.describe('Core App Functionality', () => {
   });
 
   test('should display data panel with refresh functionality', async ({ page }) => {
-    await login(page);
+    await openHome(page);
 
     await page.click('a[href="#analytics-chart-data"]');
     await expect(page.locator('#analytics-chart-data')).toBeVisible();
