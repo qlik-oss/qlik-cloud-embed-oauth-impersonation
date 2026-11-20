@@ -75,6 +75,6 @@ The `playwright.config.js` is set up for CI:
 - Retries are enabled (`2`) on CI
 - Workers are serialised to `1` on CI to avoid port conflicts
 
-The workflow runs the `hermetic` job (unit + browser tests, no secrets) alongside the end-to-end `test` job.
+The workflow runs the `hermetic` job (unit + browser tests, no secrets) first. The end-to-end `test` job runs after `hermetic` passes.
 
 Provide the same environment variables you use locally as GitHub Actions secrets.

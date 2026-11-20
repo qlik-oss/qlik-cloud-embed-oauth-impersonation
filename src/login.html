@@ -107,12 +107,10 @@
           throw new Error('the server response did not include a token');
         }
         document.getElementById('csrfToken').value = data.csrfToken;
+        document.getElementById('loginButton').disabled = false;
       } catch (error) {
         console.error('CSRF init error:', error);
         showError(`Could not get a security token (${error.message}). Refresh the page to try again.`);
-      } finally {
-        // Enable the button either way — the server validates the CSRF token on submit
-        document.getElementById('loginButton').disabled = false;
       }
     });
   </script>

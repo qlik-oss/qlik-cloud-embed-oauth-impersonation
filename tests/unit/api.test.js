@@ -176,7 +176,7 @@ describe('GET /hypercube', () => {
     assert.equal(qHyperCubeDef.qMeasures[0].qDef.qDef, TEST_ENV.HYPERCUBE_MEASURE);
   });
 
-  it('stops paging if the engine returns an empty page', async () => {
+  it('returns an error if the engine returns an empty page before all rows are fetched', async () => {
     const qlik = createQlikStub({ hypercubeRows: makeRows(15) });
     const { app } = buildApp({ qlik });
     const { agent } = await login(app);
@@ -193,8 +193,8 @@ describe('GET /hypercube', () => {
       qlik.models.push(model);
       return model;
     });
-    const res = await agent.get('/hypercube').expect(200);
-    assert.equal(res.body.returnedDimension.length, 10);
+    const res = await agent.get('/hypercube').expect(500);
+    assert.equal(res.body.error, 'Unable to retrieve hypercube data');
   });
 
   it('destroys the session object on success and on failure', async () => {

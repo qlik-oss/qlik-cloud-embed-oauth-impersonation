@@ -28,29 +28,29 @@ test.describe('login page', () => {
     await expect(page.locator('#login-error')).toBeHidden();
   });
 
-  test('shows an error but still enables the button when the CSRF token cannot be fetched', async ({ page }) => {
+  test('shows an error and keeps the button disabled when the CSRF token cannot be fetched', async ({ page }) => {
     await page.route('**/csrf-token', (route) => route.fulfill({ status: 500, body: 'nope' }));
     await page.goto('/login');
     await expect(page.locator('#login-error')).toBeVisible();
     await expect(page.locator('#login-error')).toHaveText(
       'Could not get a security token (the server returned HTTP 500). Refresh the page to try again.'
     );
-    await expect(page.locator('#loginButton')).toBeEnabled();
+    await expect(page.locator('#loginButton')).toBeDisabled();
   });
 
-  test('shows an error and still enables the button when /csrf-token is unreachable', async ({ page }) => {
+  test('shows an error and keeps the button disabled when /csrf-token is unreachable', async ({ page }) => {
     await page.route('**/csrf-token', (route) => route.abort('connectionrefused'));
     await page.goto('/login');
     await expect(page.locator('#login-error')).toBeVisible();
     await expect(page.locator('#login-error')).toContainText(/^Could not get a security token \(.+\)\. Refresh the page to try again\.$/);
-    await expect(page.locator('#loginButton')).toBeEnabled();
+    await expect(page.locator('#loginButton')).toBeDisabled();
   });
 
   test('shows an error when /csrf-token responds without a token', async ({ page }) => {
     await page.route('**/csrf-token', (route) => route.fulfill({ json: {} }));
     await page.goto('/login');
     await expect(page.locator('#login-error')).toContainText('the server response did not include a token');
-    await expect(page.locator('#loginButton')).toBeEnabled();
+    await expect(page.locator('#loginButton')).toBeDisabled();
   });
 });
 

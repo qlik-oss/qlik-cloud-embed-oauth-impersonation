@@ -221,6 +221,8 @@ There are three test suites:
 - **Hermetic browser tests** (`tests/browser/`, [Playwright](https://playwright.dev)) run the real pages against a stub server (the same app with `@qlik/api` stubbed) to check client-side behaviour and error handling. No `.env` or tenant needed.
 - **End-to-end tests** (`tests/*.spec.js`, Playwright) verify authentication, impersonation and content rendering against a live Qlik Cloud tenant, so they require a configured `.env` file.
 
+Before running the browser tests for the first time, run `npx playwright install chromium` for the stubbed browser suite or `npx playwright install` for the full suite.
+
 ```shell
 # Run all three suites (unit, browser, then end-to-end; the last one needs a configured .env)
 npm test

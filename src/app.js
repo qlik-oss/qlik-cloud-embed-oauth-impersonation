@@ -313,7 +313,9 @@ export function createApp({ qlik, env = process.env, rateLimits = {} }) {
         while (data.length < totalHeight) {
           const page = { qTop: data.length, qLeft: 0, qWidth: columns, qHeight: HYPERCUBE_PAGE_HEIGHT };
           const [nextPage] = await model.getHyperCubeData("/qHyperCubeDef", [page]);
-          if (!nextPage?.qMatrix?.length) break; // defensive: never loop forever
+          if (!nextPage?.qMatrix?.length) {
+            throw new Error(`Hypercube page at row ${data.length} was empty. Expected ${totalHeight} rows.`);
+          }
           data.push(...nextPage.qMatrix);
         }
 
